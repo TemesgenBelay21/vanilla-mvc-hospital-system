@@ -1,14 +1,19 @@
+# Composer dependencies (run `composer install` after cloning)
+/vendor/
+composer.phar
+
+# Runtime & logs
+*.log
+/cache/
+
+# OS / editor cruft
+Thumbs.db
+.DS_Store
+*.swp
 .idea/
 .vscode/
-.DS_Store
-Thumbs.db
 
-# Uploaded files (doctor profile photos)
-public/uploads/*
-!public/uploads/.htaccess
-
-# Logs & temp
-*.log
-# Lab result files
-storage/lab/*
-!storage/lab/.gitkeep
+# Environment overrides
+.env
+.env.local
+config/local.php

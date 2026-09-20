@@ -91,7 +91,8 @@ INSERT INTO availabilities (doctor_id, day_of_week, start_time) VALUES
 INSERT INTO users (role, name, email, password, phone) VALUES
 ('nurse',          'Alemitu Bekele',      'nurse@hospital.com',      '$2y$10$43IzIcnwQ4UNtnOKJvWy3uQWocUmlJ67mnMTIZok9u6Ysd2DRkbCS', '+251 911 000 555'),
 ('pharmacist',     'Daniel Girma',        'pharmacist@hospital.com', '$2y$10$GciBx2Rdnpm0jOYqklUCBefOUY3ZBmzfmyzli.sKzsyRVdrwjGvtu', '+251 911 000 666'),
-('lab_technician', 'Feven Tadesse',       'lab@hospital.com',        '$2y$10$nYScZ34nuHnw9INXca1EOuy6KE0ZbQ1FTvvMK.OggnNEsRa7djazy', '+251 911 000 777');
+('lab_technician', 'Feven Tadesse',       'lab@hospital.com',        '$2y$10$nYScZ34nuHnw9INXca1EOuy6KE0ZbQ1FTvvMK.OggnNEsRa7djazy', '+251 911 000 777'),
+('accountant',     'Mulualem Worku',      'accountant@hospital.com', '$2y$10$SfK/JaRHRClL96HMHQnJT.AvqiD.sZ3eEy6DZ/tI01kdpAKjIwvj6', '+251 911 000 888');
 
 -- -----------------------------------------------------------------
 -- Wards and beds
