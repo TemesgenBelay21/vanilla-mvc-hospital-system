@@ -1,4 +1,4 @@
-/* Hospital Management System — shared interactions */
+/* Almaz General Hospital — shared interactions */
 (function () {
     'use strict';
 
@@ -23,7 +23,111 @@
         });
 
         initSlotPicker();
+        initNotifications();
     });
+
+    /**
+     * Notification bell (all roles). Fetches unread notifications as JSON,
+     * renders the dropdown, and posts mark-read / mark-all-read actions.
+     */
+    function initNotifications() {
+        var bell = document.getElementById('bell');
+        if (!bell || typeof window.APP_CSRF === 'undefined') return;
+
+        var toggle   = document.getElementById('bellToggle');
+        var dropdown = document.getElementById('bellDropdown');
+        var countEl  = document.getElementById('bellCount');
+        var listEl   = document.getElementById('bellList');
+        var markAll  = document.getElementById('bellMarkAll');
+        var base     = window.APP_BASE;
+
+        function post(url) {
+            return fetch(base + url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: '_token=' + encodeURIComponent(window.APP_CSRF)
+            });
+        }
+
+        function relativeTime(ts) {
+            if (!ts) return '';
+            var date = new Date(String(ts).replace(' ', 'T'));
+            if (isNaN(date.getTime())) return ts;
+            var seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+            if (seconds < 60) return 'just now';
+            var minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + 'm ago';
+            var hours = Math.floor(minutes / 60);
+            if (hours < 24) return hours + 'h ago';
+            var days = Math.floor(hours / 24);
+            return days === 1 ? 'yesterday' : days + 'd ago';
+        }
+
+        function render(data) {
+            var unread = data.unread_count || 0;
+            countEl.hidden = unread <= 0;
+            countEl.textContent = unread > 99 ? '99+' : unread;
+            listEl.innerHTML = '';
+            var items = data.items || [];
+            if (!items.length) {
+                listEl.innerHTML = '<div class="bell-empty">You are all caught up.</div>';
+                return;
+            }
+            items.forEach(function (n) {
+                var a = document.createElement('a');
+                a.className = 'bell-item' + (n.is_read ? '' : ' unread');
+                if (n.link) a.href = base + n.link;
+
+                var title = document.createElement('div');
+                title.className = 'bell-item-title';
+                title.textContent = n.title;
+
+                var msg = document.createElement('div');
+                msg.className = 'bell-item-msg';
+                msg.textContent = n.message;
+
+                var time = document.createElement('div');
+                time.className = 'bell-item-time';
+                time.textContent = relativeTime(n.created_at);
+
+                a.appendChild(title);
+                a.appendChild(msg);
+                a.appendChild(time);
+
+                if (!n.is_read) {
+                    a.addEventListener('click', function () {
+                        post('/notifications/' + n.id + '/read');
+                    });
+                }
+                listEl.appendChild(a);
+            });
+        }
+
+        function load() {
+            fetch(base + '/notifications', { headers: { 'X-Requested-With': 'fetch' } })
+                .then(function (r) { return r.json(); })
+                .then(render)
+                .catch(function () {});
+        }
+
+        toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            dropdown.hidden = !dropdown.hidden;
+            if (!dropdown.hidden) load();
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!bell.contains(e.target)) dropdown.hidden = true;
+        });
+
+        if (markAll) {
+            markAll.addEventListener('click', function () {
+                post('/notifications/mark-all-read').then(load);
+            });
+        }
+
+        load();
+    }
 
     /**
      * Appointment slot picker.
