@@ -1,12 +1,14 @@
 -- ==============================================================
--- Phase 2 migration — run against a Phase 1 database.
--- Adds nurse / pharmacist / lab_technician roles and the
--- admissions, ward, vitals, pharmacy and lab schema.
+-- Phase 2 migration — schema only: nurse / pharmacist / lab_technician
+-- roles and the admissions, ward, vitals, pharmacy and lab schema.
+--
+-- NOTE: The full consolidated baseline lives in database/schema.sql;
+-- run schema.sql + seed.sql for a fresh install. This migration exists
+-- to upgrade an existing Phase 1 database, and contains no seed data —
+-- demo accounts/wards/inventory are in database/seed.sql.
 -- ==============================================================
-USE `hospital_management_db`;
-
 -- ---------------------------------------------------------------
--- 1. Extend the users role enum
+-- Extend the users role enum
 -- ---------------------------------------------------------------
 ALTER TABLE users
     MODIFY role ENUM('admin','doctor','receptionist','patient','nurse','pharmacist','lab_technician') NOT NULL;
@@ -156,50 +158,3 @@ CREATE TABLE IF NOT EXISTS lab_requests (
     KEY idx_lab_status (status),
     KEY idx_lab_patient (patient_id)
 ) ENGINE=InnoDB;
-
--- ---------------------------------------------------------------
--- 7. Seed — demo staff accounts for the new roles
--- ---------------------------------------------------------------
-INSERT INTO users (role, name, email, password, phone) VALUES
-('nurse',          'Alemitu Bekele',      'nurse@hospital.com',      '$2y$10$43IzIcnwQ4UNtnOKJvWy3uQWocUmlJ67mnMTIZok9u6Ysd2DRkbCS', '+251 911 000 555'),
-('pharmacist',     'Daniel Girma',        'pharmacist@hospital.com', '$2y$10$GciBx2Rdnpm0jOYqklUCBefOUY3ZBmzfmyzli.sKzsyRVdrwjGvtu', '+251 911 000 666'),
-('lab_technician', 'Feven Tadesse',       'lab@hospital.com',        '$2y$10$nYScZ34nuHnw9INXca1EOuy6KE0ZbQ1FTvvMK.OggnNEsRa7djazy', '+251 911 000 777');
-
--- ---------------------------------------------------------------
--- 8. Seed — wards and beds
--- ---------------------------------------------------------------
-INSERT INTO wards (name, description) VALUES
-('General Ward',  'General medicine beds for monitored recovery.'),
-('ICU',           'Intensive care unit for critically ill patients.'),
-('Maternity',     'Maternity and post-natal care.'),
-('Pediatric Ward','Care for infants, children and adolescents.');
-
-SET @general = (SELECT id FROM wards WHERE name = 'General Ward');
-SET @icu     = (SELECT id FROM wards WHERE name = 'ICU');
-SET @mat     = (SELECT id FROM wards WHERE name = 'Maternity');
-SET @ped     = (SELECT id FROM wards WHERE name = 'Pediatric Ward');
-
-INSERT INTO beds (ward_id, bed_number, status) VALUES
-(@general, 'G-1', 'free'), (@general, 'G-2', 'free'), (@general, 'G-3', 'free'), (@general, 'G-4', 'free'),
-(@icu,     'I-1', 'free'), (@icu,     'I-2', 'free'), (@icu,     'I-3', 'free'),
-(@mat,     'M-1', 'free'), (@mat,     'M-2', 'free'), (@mat,     'M-3', 'free'),
-(@ped,     'P-1', 'free'), (@ped,     'P-2', 'free'), (@ped,     'P-3', 'free');
-
--- ---------------------------------------------------------------
--- 9. Seed — assign nurse Alemitu to the General Ward and ICU
--- ---------------------------------------------------------------
-INSERT INTO nurses (user_id) VALUES ((SELECT id FROM users WHERE email = 'nurse@hospital.com'));
-INSERT INTO nurse_ward_assignments (nurse_id, ward_id) VALUES
-((SELECT n.id FROM nurses n JOIN users u ON u.id = n.user_id WHERE u.email = 'nurse@hospital.com'), @general),
-((SELECT n.id FROM nurses n JOIN users u ON u.id = n.user_id WHERE u.email = 'nurse@hospital.com'), @icu);
-
--- ---------------------------------------------------------------
--- 10. Seed — pharmacy inventory (one item below low-stock threshold)
--- ---------------------------------------------------------------
-INSERT INTO medicines (name, category, stock_quantity, unit_price, expiry_date, supplier, low_stock_threshold) VALUES
-('Paracetamol 500mg',   'Analgesic',      120, 25.00, '2028-06-30', 'Ethio Pharma', 20),
-('Amoxicillin 250mg',   'Antibiotic',      60, 45.00, '2027-12-31', 'Ethio Pharma', 15),
-('Ibuprofen 400mg',     'Analgesic',       18, 30.00, '2028-03-31', 'Addis Pharm',  20),
-('Metformin 500mg',     'Antidiabetic',    80, 35.00, '2029-01-31', 'Addis Pharm',  15),
-('Ciprofloxacin 500mg', 'Antibiotic',       7, 90.00, '2027-08-31', 'Best Med',     10),
-('Loratadine 10mg',     'Antihistamine',   40, 28.00, '2028-11-30', 'Best Med',     10);

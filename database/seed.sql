@@ -6,7 +6,6 @@
 --   Receptionist receptionist@hospital.com / reception123
 --   Patient      patient@hospital.com    / patient123
 -- ==============================================================
-USE `hospital_management_db`;
 
 -- -----------------------------------------------------------------
 -- Departments (editable starter list)

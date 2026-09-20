@@ -6,10 +6,10 @@
 CREATE DATABASE IF NOT EXISTS `hospital_management_db`
     DEFAULT CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
-USE `hospital_management_db`;
 
 -- ---------------------------------------------------------------
--- Users (all logins: admin, doctor, receptionist, patient)
+-- Users (roles: admin, doctor, receptionist, patient, nurse,
+--            pharmacist, lab_technician)
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
