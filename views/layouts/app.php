@@ -17,6 +17,8 @@ switch ($role) {
             'Departments'  => '/admin/departments',
             'Staff Accounts' => '/admin/staff',
             'Patients'     => '/admin/patients',
+            'Wards'        => '/admin/wards',
+            'Admissions'   => '/admin/admissions',
         ];
         break;
     case 'receptionist':
@@ -43,6 +45,8 @@ switch ($role) {
     case 'nurse':
         $nav = [
             'Dashboard'    => '/nurse',
+            'My Wards'     => '/nurse/wards',
+            'Admissions'   => '/nurse/admissions',
         ];
         break;
     case 'pharmacist':

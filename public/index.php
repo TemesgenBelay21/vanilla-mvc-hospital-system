@@ -55,6 +55,22 @@ $routes = [
         // Doctor availability
         '/doctor/availability'                  => ['AvailabilityController', 'index'],
 
+        // Wards & beds (admin + nurse)
+        '/admin/wards'                          => ['WardController', 'index'],
+        '/admin/wards/create'                   => ['WardController', 'create'],
+        '/admin/wards/{id}'                     => ['WardController', 'show'],
+        '/admin/wards/{id}/edit'                => ['WardController', 'edit'],
+        '/nurse/wards'                          => ['WardController', 'nurseIndex'],
+        '/nurse/wards/{id}'                     => ['WardController', 'show'],
+
+        // Admissions (admin + nurse)
+        '/admin/admissions'                     => ['AdmissionController', 'index'],
+        '/admin/admissions/new'                 => ['AdmissionController', 'create'],
+        '/admin/admissions/{id}'                => ['AdmissionController', 'show'],
+        '/nurse/admissions'                     => ['AdmissionController', 'index'],
+        '/nurse/admissions/new'                 => ['AdmissionController', 'create'],
+        '/nurse/admissions/{id}'                => ['AdmissionController', 'show'],
+
         // Appointment booking
         '/patient/book'                         => ['AppointmentController', 'create'],
         '/receptionist/appointments/book'       => ['AppointmentController', 'create'],
@@ -99,6 +115,21 @@ $routes = [
 // Appointment booking
         '/patient/book'                                    => ['AppointmentController', 'store'],
         '/receptionist/appointments/book'                  => ['AppointmentController', 'store'],
+
+        // Wards & beds (admin)
+        '/admin/wards/store'                              => ['WardController', 'store'],
+        '/admin/wards/{id}/update'                        => ['WardController', 'update'],
+        '/admin/wards/{id}/delete'                        => ['WardController', 'destroy'],
+        '/admin/wards/{id}/beds/store'                    => ['WardController', 'bedStore'],
+        '/admin/beds/{id}/delete'                         => ['WardController', 'bedDestroy'],
+
+        // Admissions (admin + nurse)
+        '/admin/admissions/store'                         => ['AdmissionController', 'store'],
+        '/nurse/admissions/store'                         => ['AdmissionController', 'store'],
+        '/admin/admissions/{id}/vitals/store'             => ['AdmissionController', 'vitalsStore'],
+        '/nurse/admissions/{id}/vitals/store'             => ['AdmissionController', 'vitalsStore'],
+        '/admin/admissions/{id}/discharge'                => ['AdmissionController', 'discharge'],
+        '/nurse/admissions/{id}/discharge'                => ['AdmissionController', 'discharge'],
 
         // Management actions
         '/doctor/appointments/{id}/approve'                => ['AppointmentController', 'approve'],

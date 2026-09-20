@@ -60,6 +60,19 @@ class Doctor
         return $stmt->fetchAll();
     }
 
+    public static function allActive(): array
+    {
+        $stmt = db()->query(
+            'SELECT d.id, u.name, d.specialization, dep.name AS department_name
+             FROM doctors d
+             JOIN users u ON u.id = d.user_id
+             JOIN departments dep ON dep.id = d.department_id
+             WHERE u.status = "active"
+             ORDER BY u.name'
+        );
+        return $stmt->fetchAll();
+    }
+
     public static function countOf(): int
     {
         return (int) db()->query('SELECT COUNT(*) FROM doctors')->fetchColumn();
