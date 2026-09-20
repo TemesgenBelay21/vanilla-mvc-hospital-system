@@ -58,6 +58,7 @@ $initials  = strtoupper(substr(preg_replace('/[^A-Za-z ]/', '', $user['name'] ??
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($roleLabel) ?> — <?= e(APP_NAME) ?></title>
     <link rel="stylesheet" href="<?= url('assets/css/style.css') ?>">
+    <script>window.APP_BASE = <?= json_encode(BASE_URL) ?>;</script>
 </head>
 <body id="app" class="app">
     <aside class="sidebar" id="sidebar">

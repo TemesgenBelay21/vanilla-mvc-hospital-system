@@ -48,6 +48,12 @@ $routes = [
 
         // Doctor availability
         '/doctor/availability'                  => ['AvailabilityController', 'index'],
+
+        // Appointment booking
+        '/patient/book'                         => ['AppointmentController', 'create'],
+        '/receptionist/appointments/book'       => ['AppointmentController', 'create'],
+        '/appointments/doctors'                 => ['AppointmentController', 'doctorsByDepartment'],
+        '/appointments/slots'                   => ['AppointmentController', 'slots'],
     ],
     'POST' => [
         '/login'                       => ['AuthController', 'login'],
@@ -71,6 +77,10 @@ $routes = [
         // Doctor availability
         '/doctor/availability/store'           => ['AvailabilityController', 'store'],
         '/doctor/availability/{id}/destroy'    => ['AvailabilityController', 'destroy'],
+
+        // Appointment booking
+        '/patient/book'                        => ['AppointmentController', 'store'],
+        '/receptionist/appointments/book'      => ['AppointmentController', 'store'],
     ],
 ];
 

@@ -10,6 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e(APP_NAME) ?></title>
     <link rel="stylesheet" href="<?= url('assets/css/style.css') ?>">
+    <script>window.APP_BASE = <?= json_encode(BASE_URL) ?>;</script>
 </head>
 <body class="guest">
     <div class="auth-wrap">
