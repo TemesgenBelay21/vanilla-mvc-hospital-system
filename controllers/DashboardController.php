@@ -100,4 +100,19 @@ class DashboardController
             'recent'    => array_slice($all, 0, 6),
         ]);
     }
+
+    public function accountant(): void
+    {
+        require_role('accountant');
+
+        view('accountant/dashboard', [
+            'invoices'   => Invoice::countOf(),
+            'paid'       => Invoice::countByStatus('paid'),
+            'unpaid'     => Invoice::countByStatus('unpaid'),
+            'partial'    => Invoice::countByStatus('partially_paid'),
+            'outstanding'=> Invoice::outstandingTotal(),
+            'monthRevenue' => Payment::sumBetween(date('Y-m-01'), date('Y-m-d')),
+            'recent'     => Payment::recent(6),
+        ]);
+    }
 }

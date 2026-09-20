@@ -30,6 +30,24 @@ $routes = [
         '/nurse'                       => ['DashboardController', 'nurse'],
         '/pharmacist'                  => ['DashboardController', 'pharmacist'],
         '/lab'                         => ['DashboardController', 'labTechnician'],
+        '/accountant'                  => ['DashboardController', 'accountant'],
+
+        // Reports (admin)
+        '/admin/reports'               => ['ReportsController', 'index'],
+
+        // Invoices & payments (accountant)
+        '/accountant/invoices'         => ['AccountantController', 'index'],
+        '/accountant/invoices/generate'=> ['AccountantController', 'generateForm'],
+        '/accountant/invoices/{id}'    => ['AccountantController', 'show'],
+        '/accountant/payments'         => ['AccountantController', 'payments'],
+
+        // Patient billing portal
+        '/patient/invoices'            => ['PaymentController', 'patientInvoices'],
+        '/patient/telebirr/pay'        => ['PaymentController', 'gateway'],
+        '/patient/telebirr/verify'     => ['PaymentController', 'verifyStatus'],
+
+        // Notification bell (JSON)
+        '/notifications'               => ['NotificationController', 'index'],
 
         // Patients (admin + receptionist)
         '/admin/patients'              => ['PatientController', 'index'],
@@ -175,6 +193,20 @@ $routes = [
         '/receptionist/appointments/{id}/reject'           => ['AppointmentController', 'reject'],
         '/receptionist/appointments/{id}/reschedule'       => ['AppointmentController', 'reschedule'],
         '/patient/appointments/{id}/cancel'                => ['AppointmentController', 'cancel'],
+
+        // Billing (accountant cashier actions)
+        '/accountant/invoices/generate'        => ['AccountantController', 'generate'],
+        '/accountant/invoices/{id}/pay'        => ['AccountantController', 'payCash'],
+
+        // Billing (patient online payment via Telebirr)
+        '/patient/invoices/{id}/pay'           => ['PaymentController', 'initiate'],
+
+        // Telebirr callback — PUBLIC, signature-guarded inside the service.
+        '/payment/telebirr/webhook'            => ['PaymentController', 'webhook'],
+
+        // Notifications (JSON)
+        '/notifications/mark-all-read'         => ['NotificationController', 'markAllRead'],
+        '/notifications/{id}/read'             => ['NotificationController', 'markRead'],
     ],
 ];
 
