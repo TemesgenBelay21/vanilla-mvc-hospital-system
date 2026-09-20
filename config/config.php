@@ -21,12 +21,44 @@ date_default_timezone_set('Africa/Addis_Ababa');
 // ---------------------------------------------------------------------------
 // Application constants
 // ---------------------------------------------------------------------------
-define('APP_NAME', 'Hospital Management System');
+define('APP_NAME', 'Almaz General Hospital');
 define('APP_ROOT', dirname(__DIR__));            // project root
 define('APP_VERSION', '1.0.0');
 
 // Fixed appointment slot length in minutes (Phase 1 scope)
 define('SLOT_MINUTES', 30);
+
+// ---------------------------------------------------------------
+// Phase 3 — billing fees (ETB default price list; editable here)
+// ---------------------------------------------------------------
+define('FEE_CONSULTATION', 500.00);   // per completed appointment
+define('FEE_LAB_TEST',     250.00);   // per completed lab request
+define('FEE_WARD_DAILY',   800.00);   // per admitted day (admission -> discharge)
+
+// ---------------------------------------------------------------
+// Phase 3 — Telebirr payment configuration
+// All credentials come from environment variables (never hardcoded).
+// TELEBIRR_MODE = 'sandbox' | 'live'. In sandbox mode the app simulates
+// the full flow locally so the feature can be tested without real
+// merchant credentials.
+// ---------------------------------------------------------------
+define('TELEBIRR_MODE',      getenv('TELEBIRR_MODE')      ?: 'sandbox');
+define('TELEBIRR_APP_ID',    getenv('TELEBIRR_APP_ID')    ?: '');
+define('TELEBIRR_APP_KEY',   getenv('TELEBIRR_APP_KEY')   ?: '');
+define('TELEBIRR_PUBLIC_KEY', getenv('TELEBIRR_PUBLIC_KEY') ?: '');
+define('TELEBIRR_PRIVATE_KEY', getenv('TELEBIRR_PRIVATE_KEY') ?: '');
+define('TELEBIRR_SHORT_CODE', getenv('TELEBIRR_SHORT_CODE') ?: '');
+define('TELEBIRR_API_BASE',   getenv('TELEBIRR_API_BASE')  ?: 'https://sandbox-telebirr.ethiotelecom.et');
+
+// ---------------------------------------------------------------
+// Phase 3 — SMTP mail configuration (PHPMailer)
+// ---------------------------------------------------------------
+define('MAIL_HOST',      getenv('MAIL_HOST') ?: 'smtp.gmail.com');
+define('MAIL_PORT',      (int) (getenv('MAIL_PORT') ?: 587));
+define('MAIL_USER',      getenv('MAIL_USER') ?: '');
+define('MAIL_PASS',      getenv('MAIL_PASS') ?: '');
+define('MAIL_FROM',      getenv('MAIL_FROM') ?: 'no-reply@almazhospital.et');
+define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Almaz General Hospital');
 
 // Allowed select values
 define('GENDERS', ['male', 'female', 'other']);
@@ -90,7 +122,7 @@ define('BASE_PATH', rtrim($basePath, '/'));
 //   models/Appointment.php          -> class Appointment
 // ---------------------------------------------------------------------------
 spl_autoload_register(function (string $class): void {
-    foreach (['controllers', 'models'] as $dir) {
+    foreach (['controllers', 'models', 'services', 'services/telebirr'] as $dir) {
         $file = APP_ROOT . '/' . $dir . '/' . $class . '.php';
         if (is_file($file)) {
             require_once $file;
