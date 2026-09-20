@@ -363,7 +363,12 @@ body.guest {
 /* ---------- Misc ---------- */
 .empty-state { text-align: center; color: var(--text-muted); padding: 34px 0; }
 
+.avatar, .mini-avatar { border-radius: 50%; object-fit: cover; }
+.mini-avatar { width: 32px; height: 32px; vertical-align: middle; }
+.mini-avatar-lg { width: 60px; height: 60px; }
+
 .row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.row.nopad { gap: 8px; }
 .row .grow { flex: 1; }
 
 /* ---------- Responsive ---------- */

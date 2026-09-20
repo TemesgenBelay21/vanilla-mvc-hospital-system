@@ -64,4 +64,22 @@ class Doctor
     {
         return (int) db()->query('SELECT COUNT(*) FROM doctors')->fetchColumn();
     }
+
+    public static function createFor(int $userId, int $departmentId, string $specialization, ?string $qualification): int
+    {
+        $stmt = db()->prepare(
+            'INSERT INTO doctors (user_id, department_id, specialization, qualification)
+             VALUES (?, ?, ?, ?)'
+        );
+        $stmt->execute([$userId, $departmentId, $specialization, $qualification]);
+        return (int) db()->lastInsertId();
+    }
+
+    public static function updateProfile(int $id, int $departmentId, string $specialization, ?string $qualification): void
+    {
+        $stmt = db()->prepare(
+            'UPDATE doctors SET department_id = ?, specialization = ?, qualification = ? WHERE id = ?'
+        );
+        $stmt->execute([$departmentId, $specialization, $qualification, $id]);
+    }
 }

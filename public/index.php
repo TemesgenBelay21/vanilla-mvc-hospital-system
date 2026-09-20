@@ -39,6 +39,12 @@ $routes = [
         '/admin/departments'                    => ['DepartmentController', 'index'],
         '/admin/departments/create'             => ['DepartmentController', 'create'],
         '/admin/departments/{id}/edit'          => ['DepartmentController', 'edit'],
+
+        // Staff accounts (admin)
+        '/admin/staff'                          => ['StaffController', 'index'],
+        '/admin/staff/doctors/create'           => ['StaffController', 'doctorCreate'],
+        '/admin/staff/receptionists/create'     => ['StaffController', 'receptionistCreate'],
+        '/admin/staff/{id}/edit'                => ['StaffController', 'edit'],
     ],
     'POST' => [
         '/login'                       => ['AuthController', 'login'],
@@ -51,6 +57,13 @@ $routes = [
         '/admin/departments/store'             => ['DepartmentController', 'store'],
         '/admin/departments/{id}/update'       => ['DepartmentController', 'update'],
         '/admin/departments/{id}/delete'       => ['DepartmentController', 'destroy'],
+
+        // Staff accounts
+        '/admin/staff/doctors/store'           => ['StaffController', 'doctorStore'],
+        '/admin/staff/receptionists/store'     => ['StaffController', 'receptionistStore'],
+        '/admin/staff/{id}/update'             => ['StaffController', 'update'],
+        '/admin/staff/{id}/toggle-status'      => ['StaffController', 'toggleStatus'],
+        '/admin/staff/{id}/reset-password'     => ['StaffController', 'resetPassword'],
     ],
 ];
 

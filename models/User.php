@@ -79,4 +79,20 @@ class User
         $stmt->execute([$role]);
         return (int) $stmt->fetchColumn();
     }
+
+    /** Doctors + receptionists with their doctor-profile details, for admin. */
+    public static function staff(): array
+    {
+        $stmt = db()->query(
+            'SELECT u.id, u.role, u.name, u.email, u.phone, u.photo, u.status, u.last_login_at,
+                    d.specialization, d.qualification, d.department_id,
+                    dep.name AS department_name
+             FROM users u
+             LEFT JOIN doctors d ON d.user_id = u.id
+             LEFT JOIN departments dep ON dep.id = d.department_id
+             WHERE u.role IN ("doctor", "receptionist")
+             ORDER BY u.role, u.name'
+        );
+        return $stmt->fetchAll();
+    }
 }

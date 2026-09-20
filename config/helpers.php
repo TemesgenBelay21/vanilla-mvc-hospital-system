@@ -211,6 +211,54 @@ function json_response(array $data, int $status = 200): void
 }
 
 // ---------------------------------------------------------------------------
+// File uploads
+// ---------------------------------------------------------------------------
+
+/**
+ * Handle an optional image upload. Returns the stored relative path on success,
+ * null when the field was empty (keep existing), or flash('error') + die on invalid.
+ */
+function handle_photo_upload(array $file, string $subdir): ?string
+{
+    $maxBytes = 2 * 1024 * 1024; // 2 MB
+
+    if (!isset($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        flash('error', 'Photo upload failed (error ' . $file['error'] . ').');
+        redirect($_SERVER['HTTP_REFERER'] ?? '/admin/staff');
+    }
+    if ($file['size'] > $maxBytes) {
+        flash('error', 'Photo must be 2 MB or smaller.');
+        redirect($_SERVER['HTTP_REFERER'] ?? '/admin/staff');
+    }
+
+    $info     = getimagesize($file['tmp_name']);
+    $extByMime = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/gif'  => 'gif',
+        'image/webp' => 'webp',
+    ];
+    if ($info === false || !isset($extByMime[$info['mime']])) {
+        flash('error', 'Photo must be a JPEG, PNG, GIF or WebP image.');
+        redirect($_SERVER['HTTP_REFERER'] ?? '/admin/staff');
+    }
+
+    $dir = APP_ROOT . '/public/uploads/' . trim($subdir, '/');
+    if (!is_dir($dir)) {
+        mkdir($dir, 0775, true);
+    }
+    $name = date('Ymd_His') . '_' . bin2hex(random_bytes(6)) . '.' . $extByMime[$info['mime']];
+    if (!move_uploaded_file($file['tmp_name'], $dir . '/' . $name)) {
+        flash('error', 'Could not save the uploaded photo.');
+        redirect($_SERVER['HTTP_REFERER'] ?? '/admin/staff');
+    }
+    return 'uploads/' . trim($subdir, '/') . '/' . $name;
+}
+
+// ---------------------------------------------------------------------------
 // Misc formatter helpers
 // ---------------------------------------------------------------------------
 
