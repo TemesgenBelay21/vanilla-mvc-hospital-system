@@ -81,9 +81,22 @@ class PatientController
         ]);
     }
 
+    /** Patients in a doctor's care — doctor only. */
+    public function doctorIndex(): void
+    {
+        $user   = require_role('doctor');
+        $doctor = Doctor::findByUserId((int) $user['id']);
+        $q      = trim($_GET['q'] ?? '');
+
+        view('patients/doctor-index', [
+            'patients' => Patient::forDoctor((int) $doctor['id'], $q),
+            'q'        => $q,
+        ]);
+    }
+
     public function profile(array $params): void
     {
-        $user    = require_role('admin', 'receptionist');
+        $user    = require_role('admin', 'receptionist', 'doctor');
         $patient = Patient::findById((int) $params['id']);
 
         if ($patient === false) {
@@ -91,10 +104,27 @@ class PatientController
             redirect('/' . $user['role'] . '/patients');
         }
 
+        $isDoctor = $user['role'] === 'doctor';
+        if ($isDoctor) {
+            $doctor = Doctor::findByUserId((int) $user['id']);
+            if (!Patient::inDoctorCare((int) $doctor['id'], (int) $patient['id'])) {
+                flash('error', 'You can only view the records of patients under your care.');
+                redirect('/doctor/patients');
+            }
+        }
+
+        $showClinical = $user['role'] !== 'receptionist';
+        $patientUserId = (int) $patient['user_id'];
+
         view('patients/profile', [
-            'patient' => $patient,
-            'isAdmin' => $user['role'] === 'admin',
-            'roleHome'=> $user['role'] === 'receptionist' ? '/receptionist' : '/admin',
+            'patient'       => $patient,
+            'isAdmin'       => $user['role'] === 'admin',
+            'isDoctor'      => $isDoctor,
+            'canPrescribe'  => $isDoctor,
+            'showClinical'  => $showClinical,
+            'admissions'    => Admission::forPatient($patientUserId),
+            'prescriptions' => $showClinical ? Prescription::forPatient($patientUserId) : [],
+            'roleHome'      => $isDoctor ? '/doctor' : ($user['role'] === 'receptionist' ? '/receptionist' : '/admin'),
         ]);
     }
 

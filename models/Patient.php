@@ -100,6 +100,53 @@ class Patient
         return $stmt->fetchAll();
     }
 
+    /** Patients who have ever consulted, treated, admitted, prescribed or
+     *  requested labs for the given doctor — "patients in this doctor's care". */
+    public static function forDoctor(int $doctorId, string $term = ''): array
+    {
+        $term = trim($term);
+        $stmt = db()->prepare(
+            'SELECT p.id, p.gender, p.blood_type, p.created_at AS profile_created_at,
+                    u.name, u.email, u.phone, u.status, u.created_at AS account_created_at,
+                    (SELECT MAX(ap.appointment_date)
+                       FROM appointments ap WHERE ap.doctor_id = :did AND ap.patient_id = p.id) AS last_visit
+             FROM patients p
+             JOIN users u ON u.id = p.user_id
+             WHERE (
+                    p.id IN (SELECT ap.patient_id FROM appointments ap WHERE ap.doctor_id = :did1)
+                 OR p.id IN (SELECT ad.patient_id FROM admissions ad WHERE ad.admitting_doctor_id = :did2)
+                 OR p.id IN (SELECT pr.patient_id FROM prescriptions pr WHERE pr.doctor_id = :did3)
+                 OR p.id IN (SELECT lr.patient_id FROM lab_requests lr WHERE lr.doctor_id = :did4)
+             )
+             AND (:term = "" OR p.id = :num OR u.name LIKE :like OR u.phone LIKE :like2)
+             ORDER BY u.name'
+        );
+        $stmt->execute([
+            ':did'   => $doctorId, ':did1' => $doctorId, ':did2' => $doctorId,
+            ':did3'  => $doctorId, ':did4' => $doctorId,
+            ':term'  => $term,
+            ':num'   => (int) $term !== 0 ? (int) $term : -1,
+            ':like'  => '%' . $term . '%',
+            ':like2' => '%' . $term . '%',
+        ]);
+        return $stmt->fetchAll();
+    }
+
+    /** Whether a doctor has any care relationship with the patient. */
+    public static function inDoctorCare(int $doctorId, int $patientId): bool
+    {
+        $stmt = db()->prepare(
+            'SELECT 1
+             WHERE EXISTS (SELECT 1 FROM appointments ap WHERE ap.doctor_id = ? AND ap.patient_id = ?)
+                OR EXISTS (SELECT 1 FROM admissions ad WHERE ad.admitting_doctor_id = ? AND ad.patient_id = ?)
+                OR EXISTS (SELECT 1 FROM prescriptions pr WHERE pr.doctor_id = ? AND pr.patient_id = ?)
+                OR EXISTS (SELECT 1 FROM lab_requests lr WHERE lr.doctor_id = ? AND lr.patient_id = ?)
+             LIMIT 1'
+        );
+        $stmt->execute([$doctorId, $patientId, $doctorId, $patientId, $doctorId, $patientId, $doctorId, $patientId]);
+        return $stmt->fetchColumn() !== false;
+    }
+
     public static function countOf(): int
     {
         return (int) db()->query('SELECT COUNT(*) FROM patients')->fetchColumn();

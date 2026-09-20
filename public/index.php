@@ -82,6 +82,11 @@ $routes = [
         '/receptionist/appointments'            => ['AppointmentController', 'index'],
         '/patient/appointments'                 => ['AppointmentController', 'index'],
 
+        // Doctor patient care
+        '/doctor/patients'                      => ['PatientController', 'doctorIndex'],
+        '/doctor/patients/{id}/profile'         => ['PatientController', 'profile'],
+        '/doctor/patients/{id}/prescriptions/new' => ['PrescriptionController', 'create'],
+
         // Reschedule forms
         '/doctor/appointments/{id}/reschedule'        => ['AppointmentController', 'rescheduleForm'],
         '/receptionist/appointments/{id}/reschedule' => ['AppointmentController', 'rescheduleForm'],
@@ -130,6 +135,9 @@ $routes = [
         '/nurse/admissions/{id}/vitals/store'             => ['AdmissionController', 'vitalsStore'],
         '/admin/admissions/{id}/discharge'                => ['AdmissionController', 'discharge'],
         '/nurse/admissions/{id}/discharge'                => ['AdmissionController', 'discharge'],
+
+        // Prescriptions (doctor)
+        '/doctor/patients/{id}/prescriptions/store'  => ['PrescriptionController', 'store'],
 
         // Management actions
         '/doctor/appointments/{id}/approve'                => ['AppointmentController', 'approve'],

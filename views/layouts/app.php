@@ -32,6 +32,7 @@ switch ($role) {
         $nav = [
             'Dashboard'    => '/doctor',
             'My Appointments' => '/doctor/appointments',
+            'My Patients'  => '/doctor/patients',
             'Availability' => '/doctor/availability',
         ];
         break;

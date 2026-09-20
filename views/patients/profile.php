@@ -1,8 +1,11 @@
 <div class="row">
     <h1 class="page-title grow">Patient profile</h1>
     <a class="btn" href="<?= url($roleHome . '/patients') ?>">&larr; Back to patients</a>
-    <?php if (!$isAdmin): ?>
+    <?php if (!$isAdmin && !$isDoctor): ?>
         <a class="btn btn-primary" href="<?= url('/receptionist/appointments/book?patient=' . (int) $patient['id']) ?>">Book appointment</a>
+    <?php endif; ?>
+    <?php if ($isDoctor): ?>
+        <a class="btn btn-primary" href="<?= url('/doctor/patients/' . (int) $patient['id'] . '/prescriptions/new') ?>">+ Prescribe medicine</a>
     <?php endif; ?>
 </div>
 
@@ -31,4 +34,84 @@
     </dl>
 </div>
 
-<p class="text-muted">Medical history timeline arrives with prescriptions, lab and admissions in later phases.</p>
+<div class="card mt">
+    <h2 class="card-title">Admission history</h2>
+    <?php if (!$admissions): ?>
+        <p class="muted">No admissions on record.</p>
+    <?php else: ?>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Admitted</th>
+                    <th>Ward / Bed</th>
+                    <th>Doctor</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Discharged</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($admissions as $ad): ?>
+                <tr>
+                    <td class="text-muted"><?= e(format_date($ad['admission_date'])) ?></td>
+                    <td><?= e($ad['ward_name']) ?> — <?= e($ad['bed_number']) ?></td>
+                    <td><?= e($ad['doctor_name'] ?: '—') ?></td>
+                    <td class="text-muted"><?= e($ad['admission_reason'] ?: '—') ?></td>
+                    <td>
+                        <?= $ad['status'] === 'admitted'
+                            ? '<span class="badge badge-active">Admitted</span>'
+                            : '<span class="badge badge-inactive">Discharged</span>' ?>
+                    </td>
+                    <td class="text-muted"><?= $ad['discharge_date'] ? e(format_date($ad['discharge_date'])) : '—' ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+</div>
+
+<?php if ($showClinical): ?>
+<div class="card mt">
+    <h2 class="card-title">Prescriptions</h2>
+    <?php if (!$prescriptions): ?>
+        <p class="muted">No prescriptions on record.</p>
+    <?php else: ?>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Dosage</th>
+                    <th>Frequency</th>
+                    <th>Duration</th>
+                    <th>Qty</th>
+                    <th>Prescribed</th>
+                    <th>By</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($prescriptions as $pr): ?>
+                <tr>
+                    <td><strong><?= e($pr['medicine_name']) ?></strong></td>
+                    <td><?= e($pr['dosage']) ?></td>
+                    <td><?= e($pr['frequency']) ?></td>
+                    <td><?= e($pr['duration']) ?></td>
+                    <td><?= (int) $pr['quantity'] ?></td>
+                    <td class="text-muted"><?= e(format_date($pr['prescribed_at'])) ?></td>
+                    <td><?= e($pr['doctor_name']) ?></td>
+                    <td>
+                        <?= $pr['status'] === 'dispensed'
+                            ? '<span class="badge badge-completed">Dispensed</span>'
+                            : '<span class="badge badge-pending">Pending</span>' ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
