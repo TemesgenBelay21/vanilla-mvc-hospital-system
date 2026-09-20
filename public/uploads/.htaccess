@@ -1,0 +1,5 @@
+# Never execute scripts uploaded to this directory
+php_flag engine off
+<FilesMatch "\.(php|phtml|php[0-9])$">
+    Deny from all
+</FilesMatch>

@@ -1,0 +1,11 @@
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Uploaded files (doctor profile photos)
+public/uploads/*
+!public/uploads/.htaccess
+
+# Logs & temp
+*.log

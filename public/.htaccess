@@ -1,0 +1,11 @@
+# Front controller — route all non-asset requests through index.php
+Options -Indexes
+RewriteEngine On
+
+# Block direct access to the uploads folder scripts
+RewriteRule ^uploads/.*\.(php|phtml|php[0-9])$ - [F,L]
+
+# If the requested file/dir exists (css, js, images), serve it directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
