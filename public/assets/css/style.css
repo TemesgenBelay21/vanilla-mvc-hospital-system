@@ -449,6 +449,11 @@ body.guest {
 .row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .row.nopad { gap: 8px; }
 .row .grow { flex: 1; }
+.row.between { justify-content: space-between; margin-bottom: 8px; }
+
+.admission-block { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.admission-block:last-child { border-bottom: none; }
+.vitals-line { font-size: 13px; color: var(--text); margin: 8px 0 0; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 760px) {

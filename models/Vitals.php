@@ -40,6 +40,30 @@ class Vitals
         return $stmt->fetchAll();
     }
 
+    /** Latest vitals per admission, for a set of admissions (patient portal use). */
+    public static function latestForAdmissions(array $admissionIds): array
+    {
+        if (!$admissionIds) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($admissionIds), '?'));
+        $stmt = db()->prepare(
+            'SELECT v.*, u.name AS recorded_by_name
+             FROM vitals v
+             LEFT JOIN users u ON u.id = v.recorded_by
+             WHERE v.id IN (
+                 SELECT MAX(v2.id)
+                 FROM vitals v2
+                 WHERE v2.admission_id IN (' . $placeholders . ')
+                 GROUP BY v2.admission_id
+             )
+             ORDER BY v.recorded_at DESC'
+        );
+        $stmt->execute($admissionIds);
+        return $stmt->fetchAll();
+    }
+
     /** Latest vitals per admission for a set of wards (dashboard use). */
     public static function latestForWards(array $wardIds): array
     {

@@ -56,18 +56,23 @@ class DashboardController
         $patient = Patient::findByUserId((int) $user['id']);
 
         view('patient/dashboard', [
-            'patient' => $patient,
+            'patient'      => $patient,
+            'appointments' => Appointment::forPatient((int) $patient['id']),
         ]);
     }
 
     public function nurse(): void
     {
-        $user   = require_role('nurse');
-        $nurse  = Nurse::findByUserId((int) $user['id']);
+        $user  = require_role('nurse');
+        $nurse = Nurse::findByUserId((int) $user['id']);
+        $wards = Nurse::wardsFor((int) $nurse['id']);
+        $wardIds = array_column($wards, 'id');
+        $active = $wardIds ? Admission::current($wardIds) : [];
 
         view('nurse/dashboard', [
-            'nurse'  => $nurse,
-            'wards'  => Nurse::wardsFor((int) $nurse['id']),
+            'nurse'         => $nurse,
+            'wards'         => $wards,
+            'activeAdmits'  => $active,
         ]);
     }
 
@@ -75,13 +80,24 @@ class DashboardController
     {
         require_role('pharmacist');
 
-        view('pharmacist/dashboard');
+        view('pharmacist/dashboard', [
+            'medicines'    => Medicine::countOf(),
+            'lowStock'     => Medicine::lowStockCount(),
+            'pendingCount' => Prescription::pendingCount(),
+            'lowList'      => Medicine::all(),
+            'queue'        => Prescription::pendingList(),
+        ]);
     }
 
     public function labTechnician(): void
     {
         require_role('lab_technician');
 
-        view('lab/dashboard');
+        $all = LabRequest::all();
+
+        view('lab/dashboard', [
+            'counts'    => LabRequest::counts(),
+            'recent'    => array_slice($all, 0, 6),
+        ]);
     }
 }

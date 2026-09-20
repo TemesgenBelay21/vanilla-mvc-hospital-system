@@ -161,7 +161,7 @@ class LabController
     /** Guarded download of a result file. */
     public function download(array $params): void
     {
-        $user = require_role('admin', 'lab_technician', 'doctor');
+        $user = require_role('admin', 'lab_technician', 'doctor', 'patient');
 
         $request = LabRequest::findById((int) $params['id']);
         if ($request === false || $request['result_file'] === null) {
@@ -174,6 +174,14 @@ class LabController
             if (!Patient::inDoctorCare((int) $doctor['id'], (int) $request['patient_id'])) {
                 flash('error', 'You can only download results for patients under your care.');
                 redirect('/doctor/patients');
+            }
+        }
+
+        if ($user['role'] === 'patient') {
+            $patient = Patient::findByUserId((int) $user['id']);
+            if ($patient === false || (int) $patient['id'] !== (int) $request['patient_id']) {
+                flash('error', 'You can only download your own results.');
+                redirect('/patient/medical');
             }
         }
 

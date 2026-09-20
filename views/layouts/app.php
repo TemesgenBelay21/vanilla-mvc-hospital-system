@@ -42,6 +42,7 @@ switch ($role) {
             'Dashboard'      => '/patient',
             'Book Appointment' => '/patient/book',
             'My Appointments'=> '/patient/appointments',
+            'My Records'     => '/patient/medical',
         ];
     break;
     case 'nurse':

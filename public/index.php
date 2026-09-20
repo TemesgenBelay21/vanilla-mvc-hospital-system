@@ -94,7 +94,8 @@ $routes = [
         // Appointment lists
         '/doctor/appointments'                  => ['AppointmentController', 'index'],
         '/receptionist/appointments'            => ['AppointmentController', 'index'],
-        '/patient/appointments'                 => ['AppointmentController', 'index'],
+'/patient/appointments'             => ['AppointmentController', 'index'],
+        '/patient/medical'                  => ['PatientController', 'medical'],
 
         // Doctor patient care
         '/doctor/patients'                      => ['PatientController', 'doctorIndex'],

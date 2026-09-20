@@ -129,6 +129,28 @@ class PatientController
         ]);
     }
 
+    /** Patient's own medical record — admissions, vitals, prescriptions, labs. */
+    public function medical(): void
+    {
+        $user    = require_role('patient');
+        $patient = Patient::findByUserId((int) $user['id']);
+
+        if ($patient === false) {
+            flash('error', 'Your patient profile was not found. Contact the front desk.');
+            redirect('/patient');
+        }
+
+        $admissions = Admission::forPatient((int) $user['id']);
+
+        view('patient/medical', [
+            'patient'      => $patient,
+            'admissions'   => $admissions,
+            'vitals'       => Vitals::latestForAdmissions(array_map('intval', array_column($admissions, 'id'))),
+            'prescriptions'=> Prescription::forPatient((int) $user['id']),
+            'labs'         => LabRequest::forPatient((int) $user['id']),
+        ]);
+    }
+
     /** Basic validation shared by self-registration and receptionist forms. */
     public function validate(array $in): array
     {
