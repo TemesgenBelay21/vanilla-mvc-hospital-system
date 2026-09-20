@@ -40,6 +40,21 @@ switch ($role) {
             'My Appointments'=> '/patient/appointments',
         ];
     break;
+    case 'nurse':
+        $nav = [
+            'Dashboard'    => '/nurse',
+        ];
+        break;
+    case 'pharmacist':
+        $nav = [
+            'Dashboard'    => '/pharmacist',
+        ];
+        break;
+    case 'lab_technician':
+        $nav = [
+            'Dashboard'    => '/lab',
+        ];
+        break;
 }
 
 function nav_active(string $page, string $current): string

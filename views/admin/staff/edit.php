@@ -49,6 +49,20 @@
                     <label for="qualification">Qualification</label>
                     <input type="text" id="qualification" name="qualification" value="<?= e($doctor['qualification']) ?>">
                 </div>
+            <?php elseif ($user['role'] === 'nurse' && $nurse): ?>
+                <div class="form-group">
+                    <label>Assigned wards <span class="optional">(choose at least one)</span></label>
+                    <div class="check-list">
+                        <?php foreach ($wards as $ward): ?>
+                            <label class="check-item">
+                                <input type="checkbox" name="wards[]" value="<?= (int) $ward['id'] ?>"
+                                    <?= in_array((int) $ward['id'], $nurseWards, true) ? 'checked' : '' ?>>
+                                <?= e($ward['name']) ?>
+                                <span class="text-muted">— <?= (int) $ward['bed_count'] - (int) $ward['occupied_count'] ?> free beds</span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             <?php endif; ?>
 
             <div class="form-group">

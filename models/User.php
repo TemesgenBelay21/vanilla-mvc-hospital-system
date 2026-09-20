@@ -80,17 +80,22 @@ class User
         return (int) $stmt->fetchColumn();
     }
 
-    /** Doctors + receptionists with their doctor-profile details, for admin. */
+    /** Clinical and administrative staff for admin management. */
     public static function staff(): array
     {
         $stmt = db()->query(
             'SELECT u.id, u.role, u.name, u.email, u.phone, u.photo, u.status, u.last_login_at,
                     d.specialization, d.qualification, d.department_id,
-                    dep.name AS department_name
+                    dep.name AS department_name,
+                    (SELECT GROUP_CONCAT(w.name ORDER BY w.name SEPARATOR ", ")
+                     FROM nurse_ward_assignments nwa
+                     JOIN wards w ON w.id = nwa.ward_id
+                     JOIN nurses nn ON nn.id = nwa.nurse_id
+                     WHERE nn.user_id = u.id) AS assigned_wards
              FROM users u
              LEFT JOIN doctors d ON d.user_id = u.id
              LEFT JOIN departments dep ON dep.id = d.department_id
-             WHERE u.role IN ("doctor", "receptionist")
+             WHERE u.role IN ("doctor", "receptionist", "nurse", "pharmacist", "lab_technician")
              ORDER BY u.role, u.name'
         );
         return $stmt->fetchAll();

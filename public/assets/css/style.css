@@ -275,6 +275,18 @@ textarea { resize: vertical; min-height: 80px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
 @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
 
+.check-list { display: flex; flex-direction: column; gap: 6px; }
+.check-item {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    background: var(--surface);
+    cursor: pointer;
+}
+.check-item:hover { border-color: var(--primary); background: var(--primary-soft); }
+.check-item input { width: auto; }
+
 /* ---------- Alerts / flash ---------- */
 .alert {
     padding: 11px 14px;

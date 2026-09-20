@@ -27,6 +27,9 @@ $routes = [
         '/receptionist'                => ['DashboardController', 'receptionist'],
         '/doctor'                      => ['DashboardController', 'doctor'],
         '/patient'                     => ['DashboardController', 'patient'],
+        '/nurse'                       => ['DashboardController', 'nurse'],
+        '/pharmacist'                  => ['DashboardController', 'pharmacist'],
+        '/lab'                         => ['DashboardController', 'labTechnician'],
 
         // Patients (admin + receptionist)
         '/admin/patients'              => ['PatientController', 'index'],
@@ -43,6 +46,9 @@ $routes = [
         // Staff accounts (admin)
         '/admin/staff'                          => ['StaffController', 'index'],
         '/admin/staff/doctors/create'           => ['StaffController', 'doctorCreate'],
+        '/admin/staff/nurses/create'            => ['StaffController', 'nurseCreate'],
+        '/admin/staff/pharmacists/create'       => ['StaffController', 'pharmacistCreate'],
+        '/admin/staff/lab-technicians/create'   => ['StaffController', 'labTechnicianCreate'],
         '/admin/staff/receptionists/create'     => ['StaffController', 'receptionistCreate'],
         '/admin/staff/{id}/edit'                => ['StaffController', 'edit'],
 
@@ -78,6 +84,9 @@ $routes = [
 
         // Staff accounts
         '/admin/staff/doctors/store'           => ['StaffController', 'doctorStore'],
+        '/admin/staff/nurses/store'            => ['StaffController', 'nurseStore'],
+        '/admin/staff/pharmacists/store'       => ['StaffController', 'pharmacistStore'],
+        '/admin/staff/lab-technicians/store'   => ['StaffController', 'labTechnicianStore'],
         '/admin/staff/receptionists/store'     => ['StaffController', 'receptionistStore'],
         '/admin/staff/{id}/update'             => ['StaffController', 'update'],
         '/admin/staff/{id}/toggle-status'      => ['StaffController', 'toggleStatus'],

@@ -30,6 +30,26 @@ class StaffController
         view('admin/staff/receptionist-create');
     }
 
+    public function nurseCreate(): void
+    {
+        require_role('admin');
+        view('admin/staff/nurse-create', [
+            'wards' => Ward::all(),
+        ]);
+    }
+
+    public function pharmacistCreate(): void
+    {
+        require_role('admin');
+        view('admin/staff/pharmacist-create');
+    }
+
+    public function labTechnicianCreate(): void
+    {
+        require_role('admin');
+        view('admin/staff/lab-technician-create');
+    }
+
     public function doctorStore(): void
     {
         require_role('admin');
@@ -133,21 +153,146 @@ class StaffController
         redirect('/admin/staff');
     }
 
+    public function nurseStore(): void
+    {
+        require_role('admin');
+        csrf_check();
+
+        $input = [
+            'name'     => trim($_POST['name'] ?? ''),
+            'email'    => strtolower(trim($_POST['email'] ?? '')),
+            'phone'    => trim($_POST['phone'] ?? ''),
+            'password' => (string) ($_POST['password'] ?? ''),
+            'wards'    => array_map('intval', $_POST['wards'] ?? []),
+        ];
+
+        $errors = $this->validateBasicAccount($input);
+        if ($errors) {
+            foreach ($errors as $error) {
+                flash('error', $error);
+            }
+            keep_old(array_merge($input, ['password' => '']));
+            redirect('/admin/staff/nurses/create');
+        }
+
+        $userId = User::create([
+            'role'     => 'nurse',
+            'name'     => $input['name'],
+            'email'    => $input['email'],
+            'password' => $input['password'],
+            'phone'    => $input['phone'] ?: null,
+        ]);
+        $nurseId = Nurse::createFor($userId);
+        if ($input['wards']) {
+            Nurse::assignWards($nurseId, $input['wards']);
+        }
+
+        flash('success', 'Nurse "' . $input['name'] . '" created.');
+        redirect('/admin/staff');
+    }
+
+    public function pharmacistStore(): void
+    {
+        require_role('admin');
+        csrf_check();
+
+        $input = [
+            'name'     => trim($_POST['name'] ?? ''),
+            'email'    => strtolower(trim($_POST['email'] ?? '')),
+            'phone'    => trim($_POST['phone'] ?? ''),
+            'password' => (string) ($_POST['password'] ?? ''),
+        ];
+
+        $errors = $this->validateBasicAccount($input);
+        if ($errors) {
+            foreach ($errors as $error) {
+                flash('error', $error);
+            }
+            keep_old(array_merge($input, ['password' => '']));
+            redirect('/admin/staff/pharmacists/create');
+        }
+
+        User::create([
+            'role'     => 'pharmacist',
+            'name'     => $input['name'],
+            'email'    => $input['email'],
+            'password' => $input['password'],
+            'phone'    => $input['phone'] ?: null,
+        ]);
+
+        flash('success', 'Pharmacist "' . $input['name'] . '" created.');
+        redirect('/admin/staff');
+    }
+
+    public function labTechnicianStore(): void
+    {
+        require_role('admin');
+        csrf_check();
+
+        $input = [
+            'name'     => trim($_POST['name'] ?? ''),
+            'email'    => strtolower(trim($_POST['email'] ?? '')),
+            'phone'    => trim($_POST['phone'] ?? ''),
+            'password' => (string) ($_POST['password'] ?? ''),
+        ];
+
+        $errors = $this->validateBasicAccount($input);
+        if ($errors) {
+            foreach ($errors as $error) {
+                flash('error', $error);
+            }
+            keep_old(array_merge($input, ['password' => '']));
+            redirect('/admin/staff/lab-technicians/create');
+        }
+
+        User::create([
+            'role'     => 'lab_technician',
+            'name'     => $input['name'],
+            'email'    => $input['email'],
+            'password' => $input['password'],
+            'phone'    => $input['phone'] ?: null,
+        ]);
+
+        flash('success', 'Lab technician "' . $input['name'] . '" created.');
+        redirect('/admin/staff');
+    }
+
+    private function validateBasicAccount(array $input): array
+    {
+        $errors = [];
+        if (mb_strlen($input['name'] ?? '') < 3) {
+            $errors[] = 'Full name must be at least 3 characters.';
+        }
+        if (!filter_var($input['email'] ?? '', FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'A valid email address is required.';
+        } elseif (User::findByEmail($input['email']) !== false) {
+            $errors[] = 'That email address is already in use.';
+        }
+        if (mb_strlen($input['password'] ?? '') < 8) {
+            $errors[] = 'Password must be at least 8 characters.';
+        }
+        return $errors;
+    }
+
     public function edit(array $params): void
     {
         require_role('admin');
         $user = User::findById((int) $params['id']);
 
-        if ($user === false || !in_array($user['role'], ['doctor', 'receptionist'], true)) {
+        if ($user === false || !in_array($user['role'], ['doctor', 'receptionist', 'nurse', 'pharmacist', 'lab_technician'], true)) {
             flash('error', 'Staff account not found.');
             redirect('/admin/staff');
         }
 
-        $doctor = $user['role'] === 'doctor' ? Doctor::findByUserId((int) $user['id']) : null;
+        $doctor   = $user['role'] === 'doctor' ? Doctor::findByUserId((int) $user['id']) : null;
+        $nurse    = $user['role'] === 'nurse' ? Nurse::findByUserId((int) $user['id']) : null;
 
         view('admin/staff/edit', [
             'user'        => $user,
             'doctor'      => $doctor,
+            'nurse'       => $nurse,
+            'nurseWards'  => $nurse ? Nurse::wardIdsFor((int) $nurse['id']) : [],
+            'wards'       => Ward::all(),
             'departments' => Department::all(),
         ]);
     }
@@ -212,6 +357,12 @@ class StaffController
             );
         }
 
+        if ($user['role'] === 'nurse') {
+            $nurse   = Nurse::findByUserId($id);
+            $wardIds = array_map('intval', $_POST['wards'] ?? []);
+            Nurse::assignWards((int) $nurse['id'], $wardIds);
+        }
+
         flash('success', 'Staff account updated.');
         redirect('/admin/staff');
     }
@@ -223,7 +374,7 @@ class StaffController
 
         $id   = (int) $params['id'];
         $user = User::findById($id);
-        if ($user === false || !in_array($user['role'], ['doctor', 'receptionist'], true)) {
+        if ($user === false || !in_array($user['role'], ['doctor', 'receptionist', 'nurse', 'pharmacist', 'lab_technician'], true)) {
             flash('error', 'Staff account not found.');
             redirect('/admin/staff');
         }

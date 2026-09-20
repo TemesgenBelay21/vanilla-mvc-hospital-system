@@ -59,4 +59,29 @@ class DashboardController
             'patient' => $patient,
         ]);
     }
+
+    public function nurse(): void
+    {
+        $user   = require_role('nurse');
+        $nurse  = Nurse::findByUserId((int) $user['id']);
+
+        view('nurse/dashboard', [
+            'nurse'  => $nurse,
+            'wards'  => Nurse::wardsFor((int) $nurse['id']),
+        ]);
+    }
+
+    public function pharmacist(): void
+    {
+        require_role('pharmacist');
+
+        view('pharmacist/dashboard');
+    }
+
+    public function labTechnician(): void
+    {
+        require_role('lab_technician');
+
+        view('lab/dashboard');
+    }
 }

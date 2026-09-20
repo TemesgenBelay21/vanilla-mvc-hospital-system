@@ -1,120 +1,18 @@
 -- ==============================================================
--- Hospital Management System — Phase 1 + Phase 2 schema
--- Database: hospital_management_db
+-- Phase 2 migration — run against a Phase 1 database.
+-- Adds nurse / pharmacist / lab_technician roles and the
+-- admissions, ward, vitals, pharmacy and lab schema.
 -- ==============================================================
-
-CREATE DATABASE IF NOT EXISTS `hospital_management_db`
-    DEFAULT CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
 USE `hospital_management_db`;
 
 -- ---------------------------------------------------------------
--- Users (all logins: admin, doctor, receptionist, patient)
+-- 1. Extend the users role enum
 -- ---------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS users (
-    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    role           ENUM('admin','doctor','receptionist','patient','nurse','pharmacist','lab_technician') NOT NULL,
-    name           VARCHAR(100) NOT NULL,
-    email          VARCHAR(150) NOT NULL,
-    password       VARCHAR(255) NOT NULL,
-    phone          VARCHAR(30)  DEFAULT NULL,
-    photo          VARCHAR(255) DEFAULT NULL,
-    status         ENUM('active','inactive') NOT NULL DEFAULT 'active',
-    last_login_at  DATETIME DEFAULT NULL,
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_users_email (email)
-) ENGINE=InnoDB;
+ALTER TABLE users
+    MODIFY role ENUM('admin','doctor','receptionist','patient','nurse','pharmacist','lab_technician') NOT NULL;
 
 -- ---------------------------------------------------------------
--- Departments
--- ---------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS departments (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name        VARCHAR(100) NOT NULL,
-    description TEXT DEFAULT NULL,
-    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_departments_name (name)
-) ENGINE=InnoDB;
-
--- ---------------------------------------------------------------
--- Doctors (profile details tied to a users row with role 'doctor')
--- ---------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS doctors (
-    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id        INT UNSIGNED NOT NULL,
-    department_id  INT UNSIGNED NOT NULL,
-    specialization VARCHAR(150) NOT NULL,
-    qualification  VARCHAR(255) DEFAULT NULL,
-    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_doctors_user (user_id),
-    CONSTRAINT fk_doctors_user       FOREIGN KEY (user_id)       REFERENCES users(id)       ON DELETE CASCADE,
-    CONSTRAINT fk_doctors_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-
--- ---------------------------------------------------------------
--- Patients (medical details tied to a users row with role 'patient')
--- ---------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS patients (
-    id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id                 INT UNSIGNED NOT NULL,
-    date_of_birth           DATE DEFAULT NULL,
-    gender                  ENUM('male','female','other') DEFAULT NULL,
-    address                 VARCHAR(255) DEFAULT NULL,
-    emergency_contact_name  VARCHAR(100) DEFAULT NULL,
-    emergency_contact_phone VARCHAR(30)  DEFAULT NULL,
-    blood_type              ENUM('A+','A-','B+','B-','AB+','AB-','O+','O-') DEFAULT NULL,
-    allergies               TEXT DEFAULT NULL,
-    created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_patients_user (user_id),
-    CONSTRAINT fk_patients_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- ---------------------------------------------------------------
--- Doctor weekly availability (one row = one fixed 30-minute slot)
--- day_of_week: 0 = Sunday ... 6 = Saturday
--- ---------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS availabilities (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    doctor_id   INT UNSIGNED NOT NULL,
-    day_of_week TINYINT NOT NULL,
-    start_time  TIME NOT NULL,
-    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_availability (doctor_id, day_of_week, start_time),
-    CONSTRAINT fk_availability_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- ---------------------------------------------------------------
--- Appointments
--- Unique (doctor_id, appointment_date, start_time) prevents
--- double-booking at the database level.
--- ---------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS appointments (
-    id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    patient_id       INT UNSIGNED NOT NULL,
-    doctor_id        INT UNSIGNED NOT NULL,
-    department_id    INT UNSIGNED NOT NULL,
-    appointment_date DATE NOT NULL,
-    start_time       TIME NOT NULL,
-    end_time         TIME NOT NULL,
-    status           ENUM('pending','approved','rejected','rescheduled','completed')
-                     NOT NULL DEFAULT 'pending',
-    patient_notes    TEXT DEFAULT NULL,
-    staff_notes      TEXT DEFAULT NULL,
-    created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_appointment_slot (doctor_id, appointment_date, start_time),
-    KEY idx_appointments_date (appointment_date),
-    CONSTRAINT fk_appointments_patient     FOREIGN KEY (patient_id)    REFERENCES patients(id)    ON DELETE CASCADE,
-    CONSTRAINT fk_appointments_doctor      FOREIGN KEY (doctor_id)     REFERENCES doctors(id)     ON DELETE RESTRICT,
-    CONSTRAINT fk_appointments_department  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
--- ==============================================================
--- Phase 2 tables — wards, admissions, pharmacy and laboratory
--- ==============================================================
-
--- ---------------------------------------------------------------
--- Wards and beds
+-- 2. Wards and beds
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS wards (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -137,7 +35,7 @@ CREATE TABLE IF NOT EXISTS beds (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------
--- Nurses (profile row linking a nurse user to their wards)
+-- 3. Nurses — profile row linking a nurse user to the wards charge
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS nurses (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -156,7 +54,7 @@ CREATE TABLE IF NOT EXISTS nurse_ward_assignments (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------
--- Admissions (one active admission per bed enforced by unique key)
+-- 4. Admissions and vitals
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS admissions (
     id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -196,7 +94,7 @@ CREATE TABLE IF NOT EXISTS vitals (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------
--- Pharmacy inventory and prescriptions
+-- 5. Pharmacy inventory and prescriptions
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS medicines (
     id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -235,7 +133,7 @@ CREATE TABLE IF NOT EXISTS prescriptions (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------
--- Laboratory requests
+-- 6. Laboratory requests
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS lab_requests (
     id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -257,3 +155,50 @@ CREATE TABLE IF NOT EXISTS lab_requests (
     KEY idx_lab_status (status),
     KEY idx_lab_patient (patient_id)
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------
+-- 7. Seed — demo staff accounts for the new roles
+-- ---------------------------------------------------------------
+INSERT INTO users (role, name, email, password, phone) VALUES
+('nurse',          'Alemitu Bekele',      'nurse@hospital.com',      '$2y$10$43IzIcnwQ4UNtnOKJvWy3uQWocUmlJ67mnMTIZok9u6Ysd2DRkbCS', '+251 911 000 555'),
+('pharmacist',     'Daniel Girma',        'pharmacist@hospital.com', '$2y$10$GciBx2Rdnpm0jOYqklUCBefOUY3ZBmzfmyzli.sKzsyRVdrwjGvtu', '+251 911 000 666'),
+('lab_technician', 'Feven Tadesse',       'lab@hospital.com',        '$2y$10$nYScZ34nuHnw9INXca1EOuy6KE0ZbQ1FTvvMK.OggnNEsRa7djazy', '+251 911 000 777');
+
+-- ---------------------------------------------------------------
+-- 8. Seed — wards and beds
+-- ---------------------------------------------------------------
+INSERT INTO wards (name, description) VALUES
+('General Ward',  'General medicine beds for monitored recovery.'),
+('ICU',           'Intensive care unit for critically ill patients.'),
+('Maternity',     'Maternity and post-natal care.'),
+('Pediatric Ward','Care for infants, children and adolescents.');
+
+SET @general = (SELECT id FROM wards WHERE name = 'General Ward');
+SET @icu     = (SELECT id FROM wards WHERE name = 'ICU');
+SET @mat     = (SELECT id FROM wards WHERE name = 'Maternity');
+SET @ped     = (SELECT id FROM wards WHERE name = 'Pediatric Ward');
+
+INSERT INTO beds (ward_id, bed_number, status) VALUES
+(@general, 'G-1', 'free'), (@general, 'G-2', 'free'), (@general, 'G-3', 'free'), (@general, 'G-4', 'free'),
+(@icu,     'I-1', 'free'), (@icu,     'I-2', 'free'), (@icu,     'I-3', 'free'),
+(@mat,     'M-1', 'free'), (@mat,     'M-2', 'free'), (@mat,     'M-3', 'free'),
+(@ped,     'P-1', 'free'), (@ped,     'P-2', 'free'), (@ped,     'P-3', 'free');
+
+-- ---------------------------------------------------------------
+-- 9. Seed — assign nurse Alemitu to the General Ward and ICU
+-- ---------------------------------------------------------------
+INSERT INTO nurses (user_id) VALUES ((SELECT id FROM users WHERE email = 'nurse@hospital.com'));
+INSERT INTO nurse_ward_assignments (nurse_id, ward_id) VALUES
+((SELECT n.id FROM nurses n JOIN users u ON u.id = n.user_id WHERE u.email = 'nurse@hospital.com'), @general),
+((SELECT n.id FROM nurses n JOIN users u ON u.id = n.user_id WHERE u.email = 'nurse@hospital.com'), @icu);
+
+-- ---------------------------------------------------------------
+-- 10. Seed — pharmacy inventory (one item below low-stock threshold)
+-- ---------------------------------------------------------------
+INSERT INTO medicines (name, category, stock_quantity, unit_price, expiry_date, supplier, low_stock_threshold) VALUES
+('Paracetamol 500mg',   'Analgesic',      120, 25.00, '2028-06-30', 'Ethio Pharma', 20),
+('Amoxicillin 250mg',   'Antibiotic',      60, 45.00, '2027-12-31', 'Ethio Pharma', 15),
+('Ibuprofen 400mg',     'Analgesic',       18, 30.00, '2028-03-31', 'Addis Pharm',  20),
+('Metformin 500mg',     'Antidiabetic',    80, 35.00, '2029-01-31', 'Addis Pharm',  15),
+('Ciprofloxacin 500mg', 'Antibiotic',       7, 90.00, '2027-08-31', 'Best Med',     10),
+('Loratadine 10mg',     'Antihistamine',   40, 28.00, '2028-11-30', 'Best Med',     10);

@@ -169,11 +169,14 @@ function require_role(string ...$roles): array
 function role_home(string $role): string
 {
     switch ($role) {
-        case 'admin':        return '/admin';
-        case 'doctor':       return '/doctor';
-        case 'receptionist': return '/receptionist';
-        case 'patient':      return '/patient';
-        default:             return '/login';
+        case 'admin':          return '/admin';
+        case 'doctor':         return '/doctor';
+        case 'receptionist':   return '/receptionist';
+        case 'patient':        return '/patient';
+        case 'nurse':          return '/nurse';
+        case 'pharmacist':     return '/pharmacist';
+        case 'lab_technician': return '/lab';
+        default:               return '/login';
     }
 }
 
@@ -295,3 +298,17 @@ function time_to(string $time, int $minutes = SLOT_MINUTES): string
 }
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** Badge tone for a user role (consistent coloring across staff lists). */
+function role_badge(string $role): string
+{
+    return [
+        'admin'          => 'danger',
+        'doctor'         => 'rescheduled',
+        'receptionist'   => 'info',
+        'nurse'          => 'approved',
+        'pharmacist'     => 'pending',
+        'lab_technician' => 'completed',
+        'patient'        => 'info',
+    ][$role] ?? 'info';
+}
