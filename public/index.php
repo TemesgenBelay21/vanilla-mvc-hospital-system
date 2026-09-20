@@ -54,6 +54,15 @@ $routes = [
         '/receptionist/appointments/book'       => ['AppointmentController', 'create'],
         '/appointments/doctors'                 => ['AppointmentController', 'doctorsByDepartment'],
         '/appointments/slots'                   => ['AppointmentController', 'slots'],
+
+        // Appointment lists
+        '/doctor/appointments'                  => ['AppointmentController', 'index'],
+        '/receptionist/appointments'            => ['AppointmentController', 'index'],
+        '/patient/appointments'                 => ['AppointmentController', 'index'],
+
+        // Reschedule forms
+        '/doctor/appointments/{id}/reschedule'        => ['AppointmentController', 'rescheduleForm'],
+        '/receptionist/appointments/{id}/reschedule' => ['AppointmentController', 'rescheduleForm'],
     ],
     'POST' => [
         '/login'                       => ['AuthController', 'login'],
@@ -78,9 +87,19 @@ $routes = [
         '/doctor/availability/store'           => ['AvailabilityController', 'store'],
         '/doctor/availability/{id}/destroy'    => ['AvailabilityController', 'destroy'],
 
-        // Appointment booking
-        '/patient/book'                        => ['AppointmentController', 'store'],
-        '/receptionist/appointments/book'      => ['AppointmentController', 'store'],
+// Appointment booking
+        '/patient/book'                                    => ['AppointmentController', 'store'],
+        '/receptionist/appointments/book'                  => ['AppointmentController', 'store'],
+
+        // Management actions
+        '/doctor/appointments/{id}/approve'                => ['AppointmentController', 'approve'],
+        '/doctor/appointments/{id}/reject'                 => ['AppointmentController', 'reject'],
+        '/doctor/appointments/{id}/complete'               => ['AppointmentController', 'complete'],
+        '/doctor/appointments/{id}/reschedule'             => ['AppointmentController', 'reschedule'],
+        '/receptionist/appointments/{id}/approve'          => ['AppointmentController', 'approve'],
+        '/receptionist/appointments/{id}/reject'           => ['AppointmentController', 'reject'],
+        '/receptionist/appointments/{id}/reschedule'       => ['AppointmentController', 'reschedule'],
+        '/patient/appointments/{id}/cancel'                => ['AppointmentController', 'cancel'],
     ],
 ];
 

@@ -23,10 +23,14 @@ function url(string $path = ''): string
     return BASE_URL . '/' . ltrim($path, '/');
 }
 
-/** Redirect to an application path and stop execution. */
+/** Redirect to an application path (or absolute URL) and stop execution. */
 function redirect(string $path): void
 {
-    header('Location: ' . url($path));
+    if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) {
+        header('Location: ' . $path);
+    } else {
+        header('Location: ' . url($path));
+    }
     exit;
 }
 

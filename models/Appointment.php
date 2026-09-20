@@ -140,10 +140,12 @@ class Appointment
     public static function forDoctor(int $doctorId): array
     {
         $stmt = db()->prepare(
-            'SELECT a.*, puser.name AS patient_name, p.id AS patient_id
+            'SELECT a.*, puser.name AS patient_name, p.id AS patient_id,
+                    dep.name AS department_name
              FROM appointments a
-             JOIN patients p     ON p.id = a.patient_id
-             JOIN users   puser  ON puser.id = p.user_id
+             JOIN patients        p     ON p.id = a.patient_id
+             JOIN users           puser ON puser.id = p.user_id
+             JOIN departments     dep   ON dep.id = a.department_id
              WHERE a.doctor_id = ? AND a.appointment_date >= CURDATE()
              ORDER BY a.appointment_date, a.start_time'
         );
@@ -154,7 +156,7 @@ class Appointment
     /** All bookings for the receptionist, with optional status/date filters. */
     public static function allForReceptionist(string $status = '', string $date = '', int $doctorId = 0): array
     {
-        $sql = 'SELECT a.*, puser.name AS patient_name, p.phone AS patient_phone,
+        $sql = 'SELECT a.*, puser.name AS patient_name, puser.phone AS patient_phone,
                        duser.name AS doctor_name, dep.name AS department_name
                 FROM appointments a
                 JOIN patients   p     ON p.id = a.patient_id
