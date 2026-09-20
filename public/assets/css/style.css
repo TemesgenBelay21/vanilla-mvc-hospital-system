@@ -317,6 +317,19 @@ textarea { resize: vertical; min-height: 80px; }
 .table tbody tr:hover { background: #f8fafc; }
 .table td .btn + .btn { margin-left: 6px; }
 
+th.text-right, td.text-right { text-align: right; }
+
+/* ---------- Definition list (profile pages) ---------- */
+.def-list {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 12px 18px;
+    margin: 0;
+}
+.def-list dt { font-weight: 600; color: var(--text-muted); font-size: 13.5px; }
+.def-list dd { margin: 0; }
+@media (max-width: 640px) { .def-list { grid-template-columns: 1fr; gap: 6px; } }
+
 /* ---------- Auth / guest ---------- */
 body.guest {
     min-height: 100vh;

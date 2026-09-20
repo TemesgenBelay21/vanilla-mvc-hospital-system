@@ -28,6 +28,11 @@ define('APP_VERSION', '1.0.0');
 // Fixed appointment slot length in minutes (Phase 1 scope)
 define('SLOT_MINUTES', 30);
 
+// Allowed select values
+define('GENDERS', ['male', 'female', 'other']);
+define('BLOOD_TYPES', ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
+define('APPOINTMENT_STATUSES', ['pending', 'approved', 'rejected', 'rescheduled', 'completed']);
+
 // ---------------------------------------------------------------------------
 // Database credentials
 // ---------------------------------------------------------------------------

@@ -80,6 +80,26 @@ class Patient
         User::update($userId, $d);
     }
 
+    public static function search(string $term = ''): array
+    {
+        $term = trim($term);
+        $stmt = db()->prepare(
+            'SELECT p.id, p.gender, p.blood_type, p.created_at AS profile_created_at,
+                    u.name, u.email, u.phone, u.status, u.created_at AS account_created_at
+             FROM patients p
+             JOIN users u ON u.id = p.user_id
+             WHERE (:term = "") OR p.id = :num OR u.name LIKE :like OR u.phone LIKE :like2
+             ORDER BY u.name'
+        );
+        $stmt->execute([
+            ':term'  => $term,
+            ':num'   => (int) $term !== 0 ? (int) $term : -1,
+            ':like'  => '%' . $term . '%',
+            ':like2' => '%' . $term . '%',
+        ]);
+        return $stmt->fetchAll();
+    }
+
     public static function countOf(): int
     {
         return (int) db()->query('SELECT COUNT(*) FROM patients')->fetchColumn();

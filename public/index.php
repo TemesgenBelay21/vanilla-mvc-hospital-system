@@ -27,10 +27,20 @@ $routes = [
         '/receptionist'                => ['DashboardController', 'receptionist'],
         '/doctor'                      => ['DashboardController', 'doctor'],
         '/patient'                     => ['DashboardController', 'patient'],
+
+        // Patients (admin + receptionist)
+        '/admin/patients'              => ['PatientController', 'index'],
+        '/admin/patients/{id}/profile' => ['PatientController', 'profile'],
+        '/receptionist/patients'                => ['PatientController', 'index'],
+        '/receptionist/patients/create'         => ['PatientController', 'create'],
+        '/receptionist/patients/{id}/profile'   => ['PatientController', 'profile'],
     ],
     'POST' => [
         '/login'                       => ['AuthController', 'login'],
         '/register'                    => ['AuthController', 'register'],
+
+        // Patients
+        '/receptionist/patients/store' => ['PatientController', 'store'],
     ],
 ];
 
