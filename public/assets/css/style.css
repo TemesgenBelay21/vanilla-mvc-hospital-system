@@ -363,6 +363,24 @@ body.guest {
 /* ---------- Misc ---------- */
 .empty-state { text-align: center; color: var(--text-muted); padding: 34px 0; }
 
+.chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    border: 1px solid #a5f3fc;
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin: 3px 6px 3px 0;
+    font-size: 13px; font-weight: 600;
+}
+.chip-x {
+    border: none; background: transparent;
+    color: var(--primary-dark);
+    font-size: 16px; line-height: 1;
+    cursor: pointer; padding: 0 2px;
+}
+.chip-x:hover { color: var(--danger); }
+
 .avatar, .mini-avatar { border-radius: 50%; object-fit: cover; }
 .mini-avatar { width: 32px; height: 32px; vertical-align: middle; }
 .mini-avatar-lg { width: 60px; height: 60px; }

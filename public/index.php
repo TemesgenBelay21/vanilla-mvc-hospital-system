@@ -45,6 +45,9 @@ $routes = [
         '/admin/staff/doctors/create'           => ['StaffController', 'doctorCreate'],
         '/admin/staff/receptionists/create'     => ['StaffController', 'receptionistCreate'],
         '/admin/staff/{id}/edit'                => ['StaffController', 'edit'],
+
+        // Doctor availability
+        '/doctor/availability'                  => ['AvailabilityController', 'index'],
     ],
     'POST' => [
         '/login'                       => ['AuthController', 'login'],
@@ -64,6 +67,10 @@ $routes = [
         '/admin/staff/{id}/update'             => ['StaffController', 'update'],
         '/admin/staff/{id}/toggle-status'      => ['StaffController', 'toggleStatus'],
         '/admin/staff/{id}/reset-password'     => ['StaffController', 'resetPassword'],
+
+        // Doctor availability
+        '/doctor/availability/store'           => ['AvailabilityController', 'store'],
+        '/doctor/availability/{id}/destroy'    => ['AvailabilityController', 'destroy'],
     ],
 ];
 
