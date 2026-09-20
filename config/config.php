@@ -59,10 +59,17 @@ define('SESSION_TIMEOUT', 30 * 60);
 // ---------------------------------------------------------------------------
 $documentRoot = str_replace('\\', '/', rtrim(realpath($_SERVER['DOCUMENT_ROOT'] ?? APP_ROOT), '/'));
 $appRoot      = str_replace('\\', '/', APP_ROOT);
-$basePath     = '/public';
+$publicRoot   = str_replace('\\', '/', rtrim(realpath(APP_ROOT . '/public'), '/'));
 
-if ($documentRoot !== $appRoot && strpos($appRoot, $documentRoot) === 0) {
-    $basePath = substr($appRoot, strlen($documentRoot)) . $basePath;
+if ($documentRoot === $publicRoot) {
+    // Document root is public/ itself (e.g. `php -S -t public` or vhost -> public)
+    $basePath = '';
+} elseif ($documentRoot !== $appRoot && strpos($appRoot, $documentRoot) === 0) {
+    // App lives inside the document root (e.g. htdocs/vanilla-mvc-hospital-system)
+    $basePath = substr($appRoot, strlen($documentRoot)) . '/public';
+} else {
+    // Document root is the project root
+    $basePath = '/public';
 }
 
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';

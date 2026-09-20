@@ -174,6 +174,43 @@ function role_home(string $role): string
 }
 
 // ---------------------------------------------------------------------------
+// View rendering
+// ---------------------------------------------------------------------------
+
+/** Render a view partial into a string. */
+function render_partial(string $view, array $data = []): string
+{
+    ob_start();
+    extract($data, EXTR_SKIP);
+    require APP_ROOT . '/views/' . $view . '.php';
+    return ob_get_clean();
+}
+
+/**
+ * Render a page inside a layout ('app' for the sidebar shell, 'guest' for
+ * standalone centered pages, 'none' for raw output).
+ */
+function view(string $view, array $data = [], string $layout = 'app'): void
+{
+    $content = render_partial($view, $data);
+    if ($layout === 'none') {
+        echo $content;
+        return;
+    }
+    $user = current_user();
+    require APP_ROOT . '/views/layouts/' . $layout . '.php';
+}
+
+/** Send a JSON response and stop. */
+function json_response(array $data, int $status = 200): void
+{
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data);
+    exit;
+}
+
+// ---------------------------------------------------------------------------
 // Misc formatter helpers
 // ---------------------------------------------------------------------------
 

@@ -1,54 +1,103 @@
 <?php
 
 /**
- * Front controller / bootstrap.
+ * Front controller / bootstrap + URL router.
  *
- * Phase 1 (commit 1) status page: verifies configuration and database.
- * The URL router is introduced alongside authentication.
+ * Pretty URLs are produced by public/.htaccess, which rewrites
+ * everything non-asset to index.php?url=<path>.
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/config.php';
 
-$dbOk      = false;
-$dbError   = null;
-$tableList = [];
+// -------------------------------------------------------------
+// Route table. Patterns may contain {param} placeholders.
+// Order matters — more specific patterns come first.
+// -------------------------------------------------------------
+$routes = [
+    'GET' => [
+        '/'                            => ['AuthController', 'redirectFromHome'],
+        '/login'                       => ['AuthController', 'loginForm'],
+        '/logout'                      => ['AuthController', 'logout'],
+        '/register'                    => ['AuthController', 'registerForm'],
 
-try {
-    $stmt   = db()->query('SHOW TABLES');
-    $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    $dbOk   = true;
-    $tableList = $tables;
-} catch (Throwable $e) {
-    $dbError = $e->getMessage();
+        // Dashboards
+        '/admin'                       => ['DashboardController', 'admin'],
+        '/receptionist'                => ['DashboardController', 'receptionist'],
+        '/doctor'                      => ['DashboardController', 'doctor'],
+        '/patient'                     => ['DashboardController', 'patient'],
+    ],
+    'POST' => [
+        '/login'                       => ['AuthController', 'login'],
+        '/register'                    => ['AuthController', 'register'],
+    ],
+];
+
+// -------------------------------------------------------------
+// Dispatch
+// -------------------------------------------------------------
+$method = $_SERVER['REQUEST_METHOD'];
+$path   = '/' . trim($_GET['url'] ?? '', '/');
+if ($path !== '/') {
+    $path = rtrim($path, '/');
 }
 
-header('Content-Type: text/html; charset=utf-8');
-?><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= e(APP_NAME) ?></title>
-    <link rel="stylesheet" href="<?= url('assets/css/style.css') ?>">
-</head>
-<body>
-    <main class="setup">
-        <h1><?= e(APP_NAME) ?></h1>
-        <p><?= e(APP_VERSION) ?> — <strong>Phase 1</strong> scaffold installed.</p>
+[$controllerClass, $action, $params] = dispatch($routes, $method, $path);
 
-        <section class="card">
-            <h2>Database status</h2>
-            <?php if ($dbOk): ?>
-                <p class="ok">Connected to <code><?= e(DB_NAME) ?></code></p>
-                <p>Tables found: <?= count($tableList) ? implode(', ', array_map('e', $tableList)) : 'none yet' ?></p>
-            <?php else: ?>
-                <p class="err">Could not connect: <?= e($dbError ?? 'unknown') ?></p>
-            <?php endif; ?>
-        </section>
+$controller = new $controllerClass();
+call_user_func_array([$controller, $action], $params);
 
-        <p>Run <code>database/schema.sql</code> then <code>database/seed.sql</code> against MySQL if tables are missing.</p>
-    </main>
-</body>
-</html>
+// -------------------------------------------------------------
+// Matching
+// -------------------------------------------------------------
+/**
+ * @param array{g: array<string, array{0:string,1:string}>} $routes
+ * @return array{0:string,1:string,2:array<string,string>}
+ */
+function dispatch(array $routes, string $method, string $path): array
+{
+    foreach ($routes[$method] ?? [] as $pattern => $handler) {
+        $params = match_route($pattern, $path);
+        if ($params !== null) {
+            return [$handler[0], $handler[1], $params];
+        }
+    }
+
+    foreach ($routes['GET'] ?? [] as $pattern => $handler) {
+        $params = match_route($pattern, $path);
+        if ($params !== null) {
+            return [$handler[0], $handler[1], $params];
+        }
+    }
+
+    http_response_code(404);
+    $content = render_partial('errors/404', ['path' => $path]);
+    require APP_ROOT . '/views/layouts/guest.php';
+    exit;
+}
+
+/**
+ * Match a pattern (e.g. "/admin/patients/{id}/profile") against a URL path.
+ * Returns capture params, or null when it does not match.
+ */
+function match_route(string $pattern, string $path): ?array
+{
+    $patternParts = explode('/', trim($pattern, '/'));
+    $pathParts    = $path === '/' ? [''] : explode('/', trim($path, '/'));
+
+    if (count($patternParts) !== count($pathParts)) {
+        return null;
+    }
+
+    $params = [];
+    foreach ($patternParts as $i => $segment) {
+        if (strlen($segment) > 2 && $segment[0] === '{' && substr($segment, -1) === '}') {
+            $key = substr($segment, 1, -1);
+            $params[$key] = urldecode($pathParts[$i]);
+        } elseif ($segment !== $pathParts[$i]) {
+            return null;
+        }
+    }
+    return $params;
+}
