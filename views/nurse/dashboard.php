@@ -48,7 +48,7 @@
                 <tr>
                     <td><?= e($a['patient_name']) ?></td>
                     <td><span class="badge badge-active"><?= e($a['bed_number']) ?></span></td>
-                    <td class="text-muted"><?= e(format_date($a['admitted_at'])) ?></td>
+                    <td class="text-muted"><?= e(format_date($a['admission_date'])) ?></td>
                     <td class="text-right">
                         <a class="btn btn-sm" href="<?= url('/nurse/admissions/' . (int) $a['id']) ?>">View</a>
                     </td>

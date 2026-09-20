@@ -103,6 +103,19 @@ class AdmissionController
             redirect($user['role'] . '/admissions/new');
         }
 
+        $admission = Admission::findById((int) $result);
+        if ($admission !== false) {
+            notify_and_mail((int) $admission['patient_user_id'], 'You have been admitted',
+                $patient['name'] . ' has been admitted to ' . $admission['ward_name'] . ' (bed ' . $admission['bed_number'] . ').',
+                '/patient/medical', 'patient-admitted', [
+                    'patient_name'   => $patient['name'],
+                    'ward'           => $admission['ward_name'],
+                    'bed'            => $admission['bed_number'],
+                    'doctor_name'    => $admission['doctor_name'] ?? 'on-call physician',
+                    'admission_date' => $admission['admission_date'],
+                ]);
+        }
+
         flash('success', 'Patient "' . e($patient['name']) . '" admitted. Bed number ' . e($bed['bed_number']) . '.');
         redirect('/' . $user['role'] . '/admissions/' . $result);
     }
@@ -176,9 +189,26 @@ class AdmissionController
 
         if (is_string($result)) {
             flash('error', $result);
-        } else {
-            flash('success', 'Patient "' . e($admission['patient_name']) . '" discharged.');
+            redirect('/' . $user['role'] . '/admissions/' . (int) $admission['id']);
         }
+
+        // Auto-generate the invoice for all outstanding services + ward days.
+        $invoice   = BillingService::createInvoiceForPatient((int) $admission['patient_id'], (int) $user['id'], 'Auto-generated on discharge');
+        $generated = $invoice['ok'] && $invoice['invoice_id'] ? (Invoice::findById((int) $invoice['invoice_id']) ?: false) : false;
+        $invoiceNumber = $generated !== false ? $generated['invoice_number'] : null;
+
+        notify_and_mail((int) $admission['patient_user_id'], 'Discharge complete',
+            $admission['patient_name'] . ' has been discharged from ' . $admission['ward_name'] . '.'
+            . ($generated !== false ? ' An invoice ' . $generated['invoice_number'] . ' was generated for ' . number_format((float) $generated['total_amount'], 2) . ' ETB.' : ''),
+            '/patient/invoices', 'patient-discharged', [
+                'patient_name'   => $admission['patient_name'],
+                'discharge_date' => date('Y-m-d H:i:s'),
+                'invoice_number' => $invoiceNumber,
+                'total_amount'   => $generated !== false ? number_format((float) $generated['total_amount'], 2) : null,
+            ]);
+
+        flash('success', 'Patient "' . e($admission['patient_name']) . '" discharged.'
+            . ($generated !== false ? ' Invoice ' . $generated['invoice_number'] . ' generated.' : ($invoice['message'] ? ' ' . $invoice['message'] : '')));
         redirect('/' . $user['role'] . '/admissions/' . (int) $admission['id']);
     }
 }

@@ -62,7 +62,7 @@ class PatientController
             'allergies'              => $input['allergies'] ?: null,
         ]);
 
-        flash('success', 'Patient "' . $input['name'] . '" registered. Temporary password is ' . $password . ' (email delivery arrives in a later phase).');
+        flash('success', 'Patient "' . $input['name'] . '" registered. Temporary password is ' . $password . '. Credentials can be handed to the patient at the front desk.');
         redirect('/receptionist/patients');
     }
 

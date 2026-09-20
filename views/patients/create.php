@@ -62,7 +62,7 @@
 
         <p class="text-muted">
             The patient gets a portal account with the temporary password
-            <code>Patient@123</code> (email delivery arrives in a later phase).
+            <code>Patient@123</code> (credentials can also be emailed once SMS/mail is configured by the system admin).
         </p>
 
         <div class="row">

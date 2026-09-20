@@ -104,6 +104,11 @@ class StaffController
         ]);
         Doctor::createFor($userId, $input['department_id'], $input['specialization'], $input['qualification'] ?: null);
 
+        notify_and_mail($userId, 'Your account is active',
+            'Welcome to ' . APP_NAME . ' as a doctor. You can now sign in and manage your availability and appointments.',
+            '/login', 'staff-activated',
+            ['role_name' => 'Doctor', 'login_email' => $input['email']]);
+
         flash('success', 'Doctor "' . $input['name'] . '" created.');
         redirect('/admin/staff');
     }
@@ -149,6 +154,11 @@ class StaffController
             'phone'    => $input['phone'] ?: null,
         ]);
 
+        notify_and_mail($userId, 'Your account is active',
+            'Welcome to ' . APP_NAME . ' as a receptionist. You can now sign in and manage appointments and patient registration.',
+            '/login', 'staff-activated',
+            ['role_name' => 'Receptionist', 'login_email' => $input['email']]);
+
         flash('success', 'Receptionist "' . $input['name'] . '" created.');
         redirect('/admin/staff');
     }
@@ -187,6 +197,11 @@ class StaffController
             Nurse::assignWards($nurseId, $input['wards']);
         }
 
+        notify_and_mail($userId, 'Your account is active',
+            'Welcome to ' . APP_NAME . ' as a nurse. You can now sign in and view your assigned wards and admissions.',
+            '/login', 'staff-activated',
+            ['role_name' => 'Nurse', 'login_email' => $input['email']]);
+
         flash('success', 'Nurse "' . $input['name'] . '" created.');
         redirect('/admin/staff');
     }
@@ -220,6 +235,11 @@ class StaffController
             'phone'    => $input['phone'] ?: null,
         ]);
 
+        notify_and_mail($userId, 'Your account is active',
+            'Welcome to ' . APP_NAME . ' as a pharmacist. You can now sign in and start dispensing prescriptions.',
+            '/login', 'staff-activated',
+            ['role_name' => 'Pharmacist', 'login_email' => $input['email']]);
+
         flash('success', 'Pharmacist "' . $input['name'] . '" created.');
         redirect('/admin/staff');
     }
@@ -252,6 +272,11 @@ class StaffController
             'password' => $input['password'],
             'phone'    => $input['phone'] ?: null,
         ]);
+
+        notify_and_mail($userId, 'Your account is active',
+            'Welcome to ' . APP_NAME . ' as a lab technician. You can now sign in and process lab requests.',
+            '/login', 'staff-activated',
+            ['role_name' => 'Lab technician', 'login_email' => $input['email']]);
 
         flash('success', 'Lab technician "' . $input['name'] . '" created.');
         redirect('/admin/staff');
@@ -381,6 +406,14 @@ class StaffController
 
         $newStatus = $user['status'] === 'active' ? 'inactive' : 'active';
         User::setStatus($id, $newStatus);
+
+        if ($newStatus === 'active') {
+            $roleName = ucwords(str_replace('_', ' ', $user['role']));
+            notify_and_mail((int) $user['id'], 'Account activated',
+                'Your ' . APP_NAME . ' account is now active. You can sign in to start working.',
+                '/login', 'staff-activated',
+                ['role_name' => $roleName, 'login_email' => $user['email']]);
+        }
 
         flash('success', 'Account "' . $user['name'] . '" ' . ($newStatus === 'active' ? 'activated.' : 'deactivated.'));
         redirect('/admin/staff');

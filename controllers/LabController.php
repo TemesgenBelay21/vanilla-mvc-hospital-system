@@ -151,6 +151,17 @@ class LabController
         }
 
         if (LabRequest::complete($id, (int) $user['id'], $resultText, $savedName)) {
+            $patient = Patient::findById((int) $request['patient_id']);
+            if ($patient !== false) {
+                notify_and_mail((int) $patient['user_id'], 'Lab result ready',
+                    'Your result for ' . $request['test_name'] . ' is ready to view in your medical records.',
+                    '/patient/medical', 'lab-result-ready', [
+                        'patient_name' => $patient['name'],
+                        'test_name'    => $request['test_name'],
+                        'result_date'  => date('Y-m-d H:i:s'),
+                        'result_link'  => url('/patient/medical'),
+                    ]);
+            }
             flash('success', 'Lab result recorded and shared with the requesting doctor.');
         } else {
             flash('error', 'This lab is already completed.');

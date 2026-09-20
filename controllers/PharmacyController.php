@@ -197,6 +197,21 @@ class PharmacyController
             redirect('/pharmacist/dispense/' . $id);
         }
 
+        $prescription = Prescription::findById($id);
+        if ($prescription !== false) {
+            $patient = Patient::findById((int) $prescription['patient_id']);
+            if ($patient !== false) {
+                notify_and_mail((int) $patient['user_id'], 'Prescription dispensed',
+                    'Your prescription for ' . $prescription['medicine_name'] . ' has been dispensed by the pharmacy.',
+                    '/patient/medical', 'prescription-dispensed', [
+                        'patient_name'      => $patient['name'],
+                        'prescription_note' => $prescription['notes'],
+                        'medicine_names'    => $prescription['medicine_name'],
+                        'dispensed_date'    => date('Y-m-d H:i:s'),
+                    ]);
+            }
+        }
+
         flash('success', 'Prescription dispensed and stock updated.');
         redirect('/pharmacist/dispense');
     }

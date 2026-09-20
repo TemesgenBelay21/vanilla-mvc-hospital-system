@@ -7,7 +7,7 @@
     <?php foreach ($byDate as $date => $rows): ?>
         <div class="card mt">
             <h2 class="card-title"><?= e(format_date($date)) ?>
-                <span class="text-muted" style="font-weight:400;font-size:13px">— <?= count($rows) ?> apppointment<?= count($rows) > 1 ? 's' : '' ?></span>
+                <span class="text-muted" style="font-weight:400;font-size:13px">— <?= count($rows) ?> appointment<?= count($rows) > 1 ? 's' : '' ?></span>
             </h2>
             <div class="table-wrap">
                 <table class="table">

@@ -267,6 +267,19 @@ class AppointmentController
         }
 
         Appointment::updateStatus((int) $app['id'], 'approved', 'Approved by ' . ($user['role'] === 'doctor' ? 'doctor' : 'receptionist') . '.');
+
+        $patient = Patient::findById((int) $app['patient_id']);
+        if ($patient !== false) {
+            notify_and_mail((int) $patient['user_id'], 'Appointment approved',
+                'Your appointment with Dr. ' . $app['doctor_name'] . ' on ' . format_date($app['appointment_date']) . ' at ' . format_time($app['start_time']) . ' has been approved.',
+                '/patient/appointments', 'appointment-approved', [
+                    'doctor_name'  => $app['doctor_name'],
+                    'patient_name' => $app['patient_name'],
+                    'date'         => $app['appointment_date'],
+                    'time'         => $app['start_time'],
+                ]);
+        }
+
         flash('success', 'Appointment approved.');
         redirect($this->backPath($user['role']));
     }
@@ -360,6 +373,19 @@ class AppointmentController
         if (!$ok) {
             flash('error', 'That time slot has just been taken. Please try another.');
             redirect($user['role'] . '/appointments/' . (int) $app['id'] . '/reschedule');
+        }
+
+        $patient = Patient::findById((int) $app['patient_id']);
+        if ($patient !== false) {
+            notify_and_mail((int) $patient['user_id'], 'Appointment rescheduled',
+                'Your appointment with Dr. ' . $app['doctor_name'] . ' was moved to ' . format_date($input['date']) . ' at ' . format_time($input['start_time']) . '.',
+                '/patient/appointments', 'appointment-rescheduled', [
+                    'doctor_name'  => $app['doctor_name'],
+                    'patient_name' => $app['patient_name'],
+                    'old_date'     => $app['appointment_date'] . ' ' . $app['start_time'],
+                    'new_date'     => $input['date'],
+                    'new_time'     => $input['start_time'],
+                ]);
         }
 
         flash('success', 'Appointment rescheduled.');

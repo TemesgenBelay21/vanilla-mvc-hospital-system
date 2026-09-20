@@ -176,6 +176,7 @@ function role_home(string $role): string
         case 'nurse':          return '/nurse';
         case 'pharmacist':     return '/pharmacist';
         case 'lab_technician': return '/lab';
+        case 'accountant':     return '/accountant';
         default:               return '/login';
     }
 }
@@ -309,6 +310,20 @@ function role_badge(string $role): string
         'nurse'          => 'approved',
         'pharmacist'     => 'pending',
         'lab_technician' => 'completed',
+        'accountant'     => 'warning',
         'patient'        => 'info',
     ][$role] ?? 'info';
+}
+
+/** Create an in-app notification for a user (Phase 3 notification bell). */
+function notify_user(int $userId, string $title, string $message, ?string $link = null): void
+{
+    Notification::create($userId, $title, $message, $link);
+}
+
+/** In-app notification + branded email for the same event. */
+function notify_and_mail(int $userId, string $title, string $message, ?string $link, string $template, array $data = []): void
+{
+    notify_user($userId, $title, $message, $link);
+    EmailService::send($userId, $title, $template, $data);
 }
