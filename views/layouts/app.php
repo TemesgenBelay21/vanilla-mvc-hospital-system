@@ -61,6 +61,7 @@ switch ($role) {
     case 'lab_technician':
         $nav = [
             'Dashboard'    => '/lab',
+            'Requests'     => '/lab/requests',
         ];
         break;
 }

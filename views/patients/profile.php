@@ -6,6 +6,7 @@
     <?php endif; ?>
     <?php if ($isDoctor): ?>
         <a class="btn btn-primary" href="<?= url('/doctor/patients/' . (int) $patient['id'] . '/prescriptions/new') ?>">+ Prescribe medicine</a>
+        <a class="btn btn-primary" href="<?= url('/doctor/patients/' . (int) $patient['id'] . '/lab/new') ?>">+ Request lab test</a>
     <?php endif; ?>
 </div>
 
@@ -107,6 +108,60 @@
                             ? '<span class="badge badge-completed">Dispensed</span>'
                             : '<span class="badge badge-pending">Pending</span>' ?>
                     </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<?php if ($showClinical): ?>
+<div class="card mt">
+    <h2 class="card-title">Lab results</h2>
+    <?php if (!$labs): ?>
+        <p class="muted">No lab tests on record.</p>
+    <?php else: ?>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Requested</th>
+                    <th>Test</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Result</th>
+                    <th>Completed</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($labs as $l): ?>
+                <tr>
+                    <td class="text-muted"><?= e(format_date($l['requested_at'])) ?></td>
+                    <td><strong><?= e($l['test_name']) ?></strong></td>
+                    <td>
+                        <?= $l['priority'] === 'urgent'
+                            ? '<span class="badge badge-rejected">Urgent</span>'
+                            : '<span class="badge badge-completed">Normal</span>' ?>
+                    </td>
+                    <td>
+                        <?= $l['status'] === 'requested' ? '<span class="badge badge-pending">Requested</span>'
+                            : ($l['status'] === 'in_progress' ? '<span class="badge badge-active">In progress</span>'
+                            : '<span class="badge badge-completed">Completed</span>') ?>
+                    </td>
+                    <td>
+                        <?php if ($l['result_text']): ?>
+                            <?= nl2br(e($l['result_text'])) ?>
+                        <?php endif; ?>
+                        <?php if ($l['result_file']): ?>
+                            <a class="btn btn-sm" href="<?= url('/lab/files/' . (int) $l['id'] . '/download') ?>">&darr; File</a>
+                        <?php endif; ?>
+                        <?php if (!$l['result_text'] && !$l['result_file']): ?>
+                            <span class="text-muted">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="text-muted"><?= $l['completed_at'] ? e(format_date($l['completed_at'])) : '—' ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

@@ -43,6 +43,12 @@ $routes = [
         '/admin/departments/create'             => ['DepartmentController', 'create'],
         '/admin/departments/{id}/edit'          => ['DepartmentController', 'edit'],
 
+        // Laboratory (doctor + lab technician)
+        '/doctor/patients/{id}/lab/new'         => ['LabController', 'create'],
+        '/lab/requests'                         => ['LabController', 'index'],
+        '/lab/requests/{id}'                    => ['LabController', 'show'],
+        '/lab/files/{id}/download'              => ['LabController', 'download'],
+
         // Pharmacy (admin + pharmacist)
         '/admin/medicines'                      => ['PharmacyController', 'index'],
         '/admin/medicines/create'               => ['PharmacyController', 'create'],
@@ -150,6 +156,11 @@ $routes = [
         '/admin/medicines/{id}/delete'             => ['PharmacyController', 'destroy'],
         '/admin/medicines/{id}/restock'            => ['PharmacyController', 'restock'],
         '/pharmacist/prescriptions/{id}/dispense'  => ['PharmacyController', 'dispense'],
+
+        // Laboratory
+        '/doctor/patients/{id}/lab/store'    => ['LabController', 'store'],
+        '/lab/requests/{id}/start'           => ['LabController', 'start'],
+        '/lab/requests/{id}/complete'        => ['LabController', 'complete'],
 
         // Prescriptions (doctor)
         '/doctor/patients/{id}/prescriptions/store'  => ['PrescriptionController', 'store'],

@@ -124,6 +124,7 @@ class PatientController
             'showClinical'  => $showClinical,
             'admissions'    => Admission::forPatient($patientUserId),
             'prescriptions' => $showClinical ? Prescription::forPatient($patientUserId) : [],
+            'labs'          => $showClinical ? LabRequest::forPatient($patientUserId) : [],
             'roleHome'      => $isDoctor ? '/doctor' : ($user['role'] === 'receptionist' ? '/receptionist' : '/admin'),
         ]);
     }

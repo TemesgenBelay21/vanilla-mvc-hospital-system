@@ -9,3 +9,6 @@ public/uploads/*
 
 # Logs & temp
 *.log
+# Lab result files
+storage/lab/*
+!storage/lab/.gitkeep
