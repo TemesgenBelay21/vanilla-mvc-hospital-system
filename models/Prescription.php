@@ -51,4 +51,84 @@ class Prescription
             'SELECT COUNT(*) FROM prescriptions WHERE status = "pending"'
         )->fetchColumn();
     }
+
+    /** Pending prescriptions with the patient, medicine and doctor — pharmacy queue. */
+    public static function pendingList(): array
+    {
+        return db()->query(
+            'SELECT pr.*, m.name AS medicine_name, m.stock_quantity, m.unit_price,
+                    u.name AS patient_name, p.date_of_birth, u.phone, du.name AS doctor_name
+             FROM prescriptions pr
+             JOIN medicines m ON m.id = pr.medicine_id
+             JOIN patients p ON p.id = pr.patient_id
+             JOIN users u ON u.id = p.user_id
+             JOIN doctors d ON d.id = pr.doctor_id
+             JOIN users du ON du.id = d.user_id
+             WHERE pr.status = "pending"
+             ORDER BY pr.prescribed_at ASC, pr.id ASC'
+        )->fetchAll();
+    }
+
+    public static function findById(int $id)
+    {
+        $stmt = db()->prepare(
+            'SELECT pr.*, m.name AS medicine_name, m.stock_quantity, m.unit_price, m.low_stock_threshold,
+                    u.name AS patient_name, u.phone, p.date_of_birth, du.name AS doctor_name
+             FROM prescriptions pr
+             JOIN medicines m ON m.id = pr.medicine_id
+             JOIN patients p ON p.id = pr.patient_id
+             JOIN users u ON u.id = p.user_id
+             JOIN doctors d ON d.id = pr.doctor_id
+             JOIN users du ON du.id = d.user_id
+             WHERE pr.id = ?'
+        );
+        $stmt->execute([$id]);
+        return $stmt->fetch() ?: false;
+    }
+
+    /**
+     * Dispenses a pending prescription by deducting stock in one transaction.
+     * Returns true on success or an error message string.
+     */
+    public static function dispense(int $id, int $dispensedByUserId)
+    {
+        $db = db();
+        $db->beginTransaction();
+
+        try {
+            $stmt = $db->prepare(
+                'SELECT pr.*, m.name AS medicine_name, m.stock_quantity
+                 FROM prescriptions pr
+                 JOIN medicines m ON m.id = pr.medicine_id
+                 WHERE pr.id = ? AND pr.status = "pending" FOR UPDATE'
+            );
+            $stmt->execute([$id]);
+            $row = $stmt->fetch();
+
+            if (!$row) {
+                $db->rollBack();
+                return 'This prescription is no longer pending.';
+            }
+            if ((int) $row['stock_quantity'] < (int) $row['quantity']) {
+                $db->rollBack();
+                return 'Not enough stock — only ' . (int) $row['stock_quantity'] . ' units of ' . e($row['medicine_name'] ?? 'this medicine') . ' available.';
+            }
+
+            $mark = $db->prepare(
+                'UPDATE prescriptions
+                 SET status = "dispensed", dispensed_by = ?, dispensed_at = NOW()
+                 WHERE id = ?'
+            );
+            $mark->execute([$dispensedByUserId, $id]);
+
+            $stock = $db->prepare('UPDATE medicines SET stock_quantity = stock_quantity - ? WHERE id = ?');
+            $stock->execute([(int) $row['quantity'], (int) $row['medicine_id']]);
+
+            $db->commit();
+            return true;
+        } catch (PDOException $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
 }

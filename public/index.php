@@ -43,6 +43,14 @@ $routes = [
         '/admin/departments/create'             => ['DepartmentController', 'create'],
         '/admin/departments/{id}/edit'          => ['DepartmentController', 'edit'],
 
+        // Pharmacy (admin + pharmacist)
+        '/admin/medicines'                      => ['PharmacyController', 'index'],
+        '/admin/medicines/create'               => ['PharmacyController', 'create'],
+        '/admin/medicines/{id}/edit'            => ['PharmacyController', 'edit'],
+        '/pharmacist/medicines'                 => ['PharmacyController', 'pharmacistIndex'],
+        '/pharmacist/dispense'                  => ['PharmacyController', 'queue'],
+        '/pharmacist/dispense/{id}'             => ['PharmacyController', 'review'],
+
         // Staff accounts (admin)
         '/admin/staff'                          => ['StaffController', 'index'],
         '/admin/staff/doctors/create'           => ['StaffController', 'doctorCreate'],
@@ -135,6 +143,13 @@ $routes = [
         '/nurse/admissions/{id}/vitals/store'             => ['AdmissionController', 'vitalsStore'],
         '/admin/admissions/{id}/discharge'                => ['AdmissionController', 'discharge'],
         '/nurse/admissions/{id}/discharge'                => ['AdmissionController', 'discharge'],
+
+        // Pharmacy
+        '/admin/medicines/store'                   => ['PharmacyController', 'store'],
+        '/admin/medicines/{id}/update'             => ['PharmacyController', 'update'],
+        '/admin/medicines/{id}/delete'             => ['PharmacyController', 'destroy'],
+        '/admin/medicines/{id}/restock'            => ['PharmacyController', 'restock'],
+        '/pharmacist/prescriptions/{id}/dispense'  => ['PharmacyController', 'dispense'],
 
         // Prescriptions (doctor)
         '/doctor/patients/{id}/prescriptions/store'  => ['PrescriptionController', 'store'],
