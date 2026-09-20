@@ -34,6 +34,11 @@ $routes = [
         '/receptionist/patients'                => ['PatientController', 'index'],
         '/receptionist/patients/create'         => ['PatientController', 'create'],
         '/receptionist/patients/{id}/profile'   => ['PatientController', 'profile'],
+
+        // Departments (admin)
+        '/admin/departments'                    => ['DepartmentController', 'index'],
+        '/admin/departments/create'             => ['DepartmentController', 'create'],
+        '/admin/departments/{id}/edit'          => ['DepartmentController', 'edit'],
     ],
     'POST' => [
         '/login'                       => ['AuthController', 'login'],
@@ -41,6 +46,11 @@ $routes = [
 
         // Patients
         '/receptionist/patients/store' => ['PatientController', 'store'],
+
+        // Departments
+        '/admin/departments/store'             => ['DepartmentController', 'store'],
+        '/admin/departments/{id}/update'       => ['DepartmentController', 'update'],
+        '/admin/departments/{id}/delete'       => ['DepartmentController', 'destroy'],
     ],
 ];
 
@@ -56,7 +66,7 @@ if ($path !== '/') {
 [$controllerClass, $action, $params] = dispatch($routes, $method, $path);
 
 $controller = new $controllerClass();
-call_user_func_array([$controller, $action], $params);
+call_user_func_array([$controller, $action], [$params]);
 
 // -------------------------------------------------------------
 // Matching
