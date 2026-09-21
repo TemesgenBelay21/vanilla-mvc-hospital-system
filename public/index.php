@@ -40,10 +40,14 @@ $routes = [
         '/accountant/invoices/{id}'    => ['AccountantController', 'show'],
         '/accountant/payments'         => ['AccountantController', 'payments'],
 
-        // Patient billing portal
-        '/patient/invoices'            => ['PaymentController', 'patientInvoices'],
-        '/patient/telebirr/pay'        => ['PaymentController', 'gateway'],
-        '/patient/telebirr/verify'     => ['PaymentController', 'verifyStatus'],
+        // Invoices (receptionist — read + Telebirr only; share the accountant views)
+        '/receptionist/invoices'       => ['AccountantController', 'index'],
+        '/receptionist/invoices/{id}'  => ['AccountantController', 'show'],
+
+        // Billing (staff role-agnostic — the Telebirr simulation gateway &
+        // status-poll destinations are shared by accountant and receptionist)
+        '/telebirr/pay'                     => ['PaymentController', 'gateway'],
+        '/telebirr/verify'                  => ['PaymentController', 'verifyStatus'],
 
         // Notification bell (JSON)
         '/notifications'               => ['NotificationController', 'index'],
@@ -192,12 +196,12 @@ $routes = [
         '/receptionist/appointments/{id}/reschedule'       => ['AppointmentController', 'reschedule'],
         '/patient/appointments/{id}/cancel'                => ['AppointmentController', 'cancel'],
 
-        // Billing (accountant cashier actions)
+        // Billing (staff-mediated — accountant cash + staff Telebirr)
         '/accountant/invoices/generate'        => ['AccountantController', 'generate'],
-        '/accountant/invoices/{id}/pay'        => ['AccountantController', 'payCash'],
-
-        // Billing (patient online payment via Telebirr)
-        '/patient/invoices/{id}/pay'           => ['PaymentController', 'initiate'],
+        '/accountant/invoices/{id}/pay-cash'   => ['AccountantController', 'payCash'],
+        '/accountant/invoices/{id}/telebirr'   => ['PaymentController', 'initiate'],
+        '/receptionist/invoices/{id}/telebirr' => ['PaymentController', 'initiate'],
+        '/telebirr/verify'                     => ['PaymentController', 'verifyStatus'],
 
         // Telebirr callback — PUBLIC, signature-guarded inside the service.
         '/payment/telebirr/webhook'            => ['PaymentController', 'webhook'],

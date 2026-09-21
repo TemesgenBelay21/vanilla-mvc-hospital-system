@@ -14,6 +14,16 @@
 
 <?php if ($invoice['due_amount'] > 0): ?>
 <div class="card mt">
+    <h2 class="card-title">Request Telebirr payment</h2>
+    <p class="text-muted" style="margin:4px 0 12px;">Open the sandbox Telebirr gateway on the patient's behalf.</p>
+    <form method="post" action="<?= url($roleHome . '/invoices/' . (int) $invoice['id'] . '/telebirr') ?>" class="form-inline">
+        <?= csrf_field() ?>
+        <button class="btn btn-primary" type="submit">Open Telebirr gateway</button>
+    </form>
+</div>
+
+<?php if ($isAccountant): ?>
+<div class="card mt">
     <h2 class="card-title">Record cash payment</h2>
     <form method="post" action="<?= url('/accountant/invoices/' . (int) $invoice['id'] . '/pay-cash') ?>" class="form-inline">
         <?= csrf_field() ?>
@@ -23,6 +33,7 @@
         <button class="btn btn-primary" type="submit">Record payment</button>
     </form>
 </div>
+<?php endif; ?>
 <?php endif; ?>
 
 <div class="card mt">
@@ -85,4 +96,4 @@
     </div>
 </div>
 
-<p class="mt"><a class="btn" href="<?= url('/accountant/invoices') ?>">&larr; Back to invoices</a></p>
+<p class="mt"><a class="btn" href="<?= url($roleHome . '/invoices') ?>">&larr; Back to invoices</a></p>

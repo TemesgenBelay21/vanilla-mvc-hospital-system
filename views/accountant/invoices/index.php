@@ -2,7 +2,7 @@
 <p class="page-sub">Filter by status, patient or date range.</p>
 
 <div class="card" style="margin-bottom:18px;">
-    <form method="get" action="<?= url('/accountant/invoices') ?>" class="form-inline">
+    <form method="get" action="<?= url($roleHome . '/invoices') ?>" class="form-inline">
         <select name="status">
             <option value="">All statuses</option>
             <?php foreach ($statuses as $s): ?>
@@ -13,8 +13,10 @@
         <input type="date" name="from" value="<?= e($from) ?>">
         <input type="date" name="to" value="<?= e($to) ?>">
         <button class="btn btn-primary" type="submit">Filter</button>
-        <a class="btn" href="<?= url('/accountant/invoices') ?>">Reset</a>
+        <a class="btn" href="<?= url($roleHome . '/invoices') ?>">Reset</a>
+        <?php if ($isAccountant): ?>
         <a class="btn" href="<?= url('/accountant/invoices/generate') ?>">+ Generate invoice</a>
+        <?php endif; ?>
     </form>
 </div>
 
@@ -42,7 +44,7 @@
                 <?php endif; ?>
                 <?php foreach ($invoices as $inv): ?>
                 <tr>
-                    <td><a href="<?= url('/accountant/invoices/' . (int) $inv['id']) ?>"><?= e($inv['invoice_number']) ?></a></td>
+                    <td><a href="<?= url($roleHome . '/invoices/' . (int) $inv['id']) ?>"><?= e($inv['invoice_number']) ?></a></td>
                     <td><?= e($inv['patient_name']) ?></td>
                     <td><?= e(format_date($inv['generated_at'])) ?></td>
                     <td class="text-right"><?= number_format((float) $inv['total_amount'], 2) ?></td>
