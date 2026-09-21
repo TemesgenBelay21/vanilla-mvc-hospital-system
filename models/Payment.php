@@ -48,11 +48,10 @@ class Payment
     public static function recent(int $limit = 20): array
     {
         $stmt = db()->prepare(
-            'SELECT p.*, i.invoice_number, u.name AS patient_name, pu.name AS recorded_by_name
+            'SELECT p.*, i.invoice_number, pt.name AS patient_name, pu.name AS recorded_by_name
              FROM payments p
              JOIN invoices i ON i.id = p.invoice_id
              JOIN patients pt ON pt.id = i.patient_id
-             JOIN users u ON u.id = pt.user_id
              LEFT JOIN users pu ON pu.id = p.paid_by
              ORDER BY p.transaction_date DESC, p.id DESC
              LIMIT ?'

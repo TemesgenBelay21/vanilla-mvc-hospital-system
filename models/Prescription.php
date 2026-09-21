@@ -26,8 +26,8 @@ class Prescription
         $stmt->execute([$patientId, $doctorId, $medicineId, $dosage, $frequency, $duration, $quantity, $notes]);
     }
 
-    /** History for a patient (latest first), by patient user id. */
-    public static function forPatient(int $patientUserId): array
+    /** History for a patient (latest first), by patient id. */
+    public static function forPatient(int $patientId): array
     {
         $stmt = db()->prepare(
             'SELECT pr.*, m.name AS medicine_name, m.unit_price,
@@ -38,10 +38,10 @@ class Prescription
              JOIN doctors d ON d.id = pr.doctor_id
              JOIN users du ON du.id = d.user_id
              LEFT JOIN users pu ON pu.id = pr.dispensed_by
-             WHERE p.user_id = ?
+             WHERE p.id = ?
              ORDER BY pr.prescribed_at DESC, pr.id DESC'
         );
-        $stmt->execute([$patientUserId]);
+        $stmt->execute([$patientId]);
         return $stmt->fetchAll();
     }
 
@@ -57,11 +57,10 @@ class Prescription
     {
         return db()->query(
             'SELECT pr.*, m.name AS medicine_name, m.stock_quantity, m.unit_price,
-                    u.name AS patient_name, p.date_of_birth, u.phone, du.name AS doctor_name
+                    p.name AS patient_name, p.phone, p.date_of_birth, du.name AS doctor_name
              FROM prescriptions pr
              JOIN medicines m ON m.id = pr.medicine_id
              JOIN patients p ON p.id = pr.patient_id
-             JOIN users u ON u.id = p.user_id
              JOIN doctors d ON d.id = pr.doctor_id
              JOIN users du ON du.id = d.user_id
              WHERE pr.status = "pending"
@@ -73,11 +72,10 @@ class Prescription
     {
         $stmt = db()->prepare(
             'SELECT pr.*, m.name AS medicine_name, m.stock_quantity, m.unit_price, m.low_stock_threshold,
-                    u.name AS patient_name, u.phone, p.date_of_birth, du.name AS doctor_name
+                    p.name AS patient_name, p.phone, p.date_of_birth, du.name AS doctor_name
              FROM prescriptions pr
              JOIN medicines m ON m.id = pr.medicine_id
              JOIN patients p ON p.id = pr.patient_id
-             JOIN users u ON u.id = p.user_id
              JOIN doctors d ON d.id = pr.doctor_id
              JOIN users du ON du.id = d.user_id
              WHERE pr.id = ?'

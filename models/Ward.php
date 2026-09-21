@@ -38,11 +38,10 @@ class Ward
     public static function bedsOf(int $wardId): array
     {
         $stmt = db()->prepare(
-            'SELECT b.*, a.id AS admission_id, p.id AS patient_id, u.name AS patient_name
+            'SELECT b.*, a.id AS admission_id, p.id AS patient_id, p.name AS patient_name
              FROM beds b
              LEFT JOIN admissions a ON a.bed_id = b.id AND a.status = "admitted"
              LEFT JOIN patients  p ON p.id = a.patient_id
-             LEFT JOIN users     u ON u.id = p.user_id
              WHERE b.ward_id = ?
              ORDER BY b.bed_number'
         );

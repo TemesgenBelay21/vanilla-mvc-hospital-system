@@ -26,11 +26,10 @@ class LabRequest
     public static function findById(int $id)
     {
         $stmt = db()->prepare(
-            'SELECT lr.*, u.name AS patient_name, u.phone, p.date_of_birth,
+            'SELECT lr.*, p.name AS patient_name, p.phone, p.date_of_birth,
                     du.name AS doctor_name, cu.name AS completed_by_name
              FROM lab_requests lr
              JOIN patients p ON p.id = lr.patient_id
-             JOIN users u ON u.id = p.user_id
              JOIN doctors d ON d.id = lr.doctor_id
              JOIN users du ON du.id = d.user_id
              LEFT JOIN users cu ON cu.id = lr.completed_by
@@ -44,18 +43,17 @@ class LabRequest
     public static function all(): array
     {
         return db()->query(
-            'SELECT lr.*, u.name AS patient_name, du.name AS doctor_name
+            'SELECT lr.*, p.name AS patient_name, du.name AS doctor_name
              FROM lab_requests lr
              JOIN patients p ON p.id = lr.patient_id
-             JOIN users u ON u.id = p.user_id
              JOIN doctors d ON d.id = lr.doctor_id
              JOIN users du ON du.id = d.user_id
              ORDER BY lr.requested_at DESC'
         )->fetchAll();
     }
 
-    /** History for a patient (by patient user id). */
-    public static function forPatient(int $patientUserId): array
+    /** History for a patient (by patient id). */
+    public static function forPatient(int $patientId): array
     {
         $stmt = db()->prepare(
             'SELECT lr.*, du.name AS doctor_name, cu.name AS completed_by_name
@@ -64,10 +62,10 @@ class LabRequest
              JOIN doctors d ON d.id = lr.doctor_id
              JOIN users du ON du.id = d.user_id
              LEFT JOIN users cu ON cu.id = lr.completed_by
-             WHERE p.user_id = ?
+             WHERE p.id = ?
              ORDER BY lr.requested_at DESC, lr.id DESC'
         );
-        $stmt->execute([$patientUserId]);
+        $stmt->execute([$patientId]);
         return $stmt->fetchAll();
     }
 

@@ -12,14 +12,13 @@ class Admission
     {
         $stmt = db()->prepare(
             'SELECT a.*, w.name AS ward_name, b.bed_number,
-                    p.user_id AS patient_user_id, u.name AS patient_name,
-                    u.phone, p.date_of_birth, p.gender, p.blood_type, p.address,
+                    p.name AS patient_name,
+                    p.phone, p.date_of_birth, p.gender, p.blood_type, p.address, p.email AS patient_email,
                     du.name AS doctor_name
              FROM admissions a
              JOIN wards  w ON w.id = a.ward_id
              JOIN beds   b ON b.id = a.bed_id
              JOIN patients p ON p.id = a.patient_id
-             JOIN users   u ON u.id = p.user_id
              LEFT JOIN doctors d ON d.id = a.admitting_doctor_id
              LEFT JOIN users du ON du.id = d.user_id
              WHERE a.id = ?'
@@ -29,20 +28,20 @@ class Admission
     }
 
     /** The patient's active admission, if any. */
-    public static function activeForPatient(int $patientUserId)
+    public static function activeForPatient(int $patientId)
     {
         $stmt = db()->prepare(
             'SELECT a.* FROM admissions a
              JOIN patients p ON p.id = a.patient_id
-             WHERE p.user_id = ? AND a.status = "admitted"
+             WHERE p.id = ? AND a.status = "admitted"
              ORDER BY a.id DESC LIMIT 1'
         );
-        $stmt->execute([$patientUserId]);
+        $stmt->execute([$patientId]);
         return $stmt->fetch() ?: false;
     }
 
     /** Full admission history for a patient (newest first). */
-    public static function forPatient(int $patientUserId): array
+    public static function forPatient(int $patientId): array
     {
         $stmt = db()->prepare(
             'SELECT a.*, w.name AS ward_name, b.bed_number, du.name AS doctor_name
@@ -52,10 +51,10 @@ class Admission
              JOIN patients p ON p.id = a.patient_id
              LEFT JOIN doctors d ON d.id = a.admitting_doctor_id
              LEFT JOIN users du ON du.id = d.user_id
-             WHERE p.user_id = ?
+             WHERE p.id = ?
              ORDER BY a.admission_date DESC, a.id DESC'
         );
-        $stmt->execute([$patientUserId]);
+        $stmt->execute([$patientId]);
         return $stmt->fetchAll();
     }
 
@@ -63,12 +62,11 @@ class Admission
     public static function forWard(int $wardId): array
     {
         $stmt = db()->prepare(
-            'SELECT a.*, b.bed_number, u.name AS patient_name,
+            'SELECT a.*, b.bed_number, p.name AS patient_name,
                     du.name AS doctor_name
              FROM admissions a
              JOIN beds b ON b.id = a.bed_id
              JOIN patients p ON p.id = a.patient_id
-             JOIN users u ON u.id = p.user_id
              LEFT JOIN doctors d ON d.id = a.admitting_doctor_id
              LEFT JOIN users du ON du.id = d.user_id
              WHERE a.ward_id = ? AND a.status = "admitted"
@@ -90,12 +88,11 @@ class Admission
 
         $stmt = db()->prepare(
             'SELECT a.*, w.name AS ward_name, b.bed_number,
-                    u.name AS patient_name, du.name AS doctor_name
+                    p.name AS patient_name, du.name AS doctor_name
              FROM admissions a
              JOIN wards w ON w.id = a.ward_id
              JOIN beds b ON b.id = a.bed_id
              JOIN patients p ON p.id = a.patient_id
-             JOIN users u ON u.id = p.user_id
              LEFT JOIN doctors d ON d.id = a.admitting_doctor_id
              LEFT JOIN users du ON du.id = d.user_id
              WHERE ' . $where . '

@@ -12,15 +12,14 @@ class Invoice
 {
     public const STATUSES = ['unpaid', 'partially_paid', 'paid'];
 
-    /** Invoice row with the patient name/user id. */
+    /** Invoice row with the patient contact info. */
     public static function findById(int $id)
     {
         $stmt = db()->prepare(
-            'SELECT i.*, p.id AS patient_id, u.name AS patient_name, u.email AS patient_email,
+            'SELECT i.*, p.id AS patient_id, p.name AS patient_name, p.email AS patient_email,
                     gu.name AS generated_by_name
              FROM invoices i
              JOIN patients p ON p.id = i.patient_id
-             JOIN users u   ON u.id = p.user_id
              LEFT JOIN users gu ON gu.id = i.generated_by
              WHERE i.id = ?'
         );
@@ -126,10 +125,9 @@ class Invoice
     /** Filterable list for the accountant. */
     public static function all(string $status = '', string $q = '', string $from = '', string $to = ''): array
     {
-        $sql = 'SELECT i.*, p.id AS patient_id, u.name AS patient_name, u.email AS patient_email
+        $sql = 'SELECT i.*, p.id AS patient_id, p.name AS patient_name, p.email AS patient_email
                 FROM invoices i
                 JOIN patients p ON p.id = i.patient_id
-                JOIN users u   ON u.id = p.user_id
                 WHERE 1 = 1';
         $params = [];
 
@@ -138,7 +136,7 @@ class Invoice
             $params[] = $status;
         }
         if ($q !== '') {
-            $sql .= ' AND (u.name LIKE ? OR i.invoice_number LIKE ?)';
+            $sql .= ' AND (p.name LIKE ? OR i.invoice_number LIKE ?)';
             $params[] = '%' . $q . '%';
             $params[] = '%' . $q . '%';
         }
@@ -157,16 +155,17 @@ class Invoice
         return $stmt->fetchAll();
     }
 
-    public static function forPatient(int $patientUserId): array
+    /** Invoices for one patient (by patient id). */
+    public static function forPatient(int $patientId): array
     {
         $stmt = db()->prepare(
             'SELECT i.*, p.id AS patient_id
              FROM invoices i
              JOIN patients p ON p.id = i.patient_id
-             WHERE p.user_id = ?
+             WHERE p.id = ?
              ORDER BY i.generated_at DESC, i.id DESC'
         );
-        $stmt->execute([$patientUserId]);
+        $stmt->execute([$patientId]);
         return $stmt->fetchAll();
     }
 
@@ -176,16 +175,16 @@ class Invoice
         return (float) db()->query('SELECT COALESCE(SUM(due_amount), 0) FROM invoices')->fetchColumn();
     }
 
-    /** Outstanding (unpaid) balance for one patient (by user id). */
-    public static function outstandingFor(int $patientUserId): float
+    /** Outstanding (unpaid) balance for one patient (by patient id). */
+    public static function outstandingFor(int $patientId): float
     {
         $stmt = db()->prepare(
             'SELECT COALESCE(SUM(i.due_amount), 0)
              FROM invoices i
              JOIN patients p ON p.id = i.patient_id
-             WHERE p.user_id = ?'
+             WHERE p.id = ?'
         );
-        $stmt->execute([$patientUserId]);
+        $stmt->execute([$patientId]);
         return (float) $stmt->fetchColumn();
     }
 
