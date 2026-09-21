@@ -1,8 +1,6 @@
 <div class="row">
     <h1 class="page-title grow">Patients</h1>
-    <?php if (!$isAdmin): ?>
-        <a class="btn btn-primary" href="<?= url('/receptionist/patients/create') ?>">+ Register patient</a>
-    <?php endif; ?>
+    <a class="btn btn-primary" href="<?= url('/' . ($isAdmin ? 'admin' : 'receptionist') . '/patients/create') ?>">+ Register patient</a>
 </div>
 
 <div class="card">
@@ -28,7 +26,7 @@
                         <th>Email</th>
                         <th>Gender</th>
                         <th>Blood type</th>
-                        <th>Status</th>
+                        <th>Registered</th>
                         <th class="text-right">Actions</th>
                     </tr>
                 </thead>
@@ -38,10 +36,10 @@
                             <td>#<?= (int) $p['id'] ?></td>
                             <td><a href="<?= url('/' . ($isAdmin ? 'admin' : 'receptionist') . '/patients/' . (int) $p['id'] . '/profile') ?>"><?= e($p['name']) ?></a></td>
                             <td><?= e($p['phone'] ?: '—') ?></td>
-                            <td><?= e($p['email']) ?></td>
+                            <td><?= e($p['email'] ?: '—') ?></td>
                             <td><?= e(ucfirst((string) $p['gender'])) ?></td>
                             <td><span class="badge badge-approved"><?= e($p['blood_type'] ?: '—') ?></span></td>
-                            <td><span class="badge badge-<?= e($p['status']) ?>"><?= e($p['status']) ?></span></td>
+                            <td class="text-muted"><?= $p['created_at'] ? e(format_date($p['created_at'])) : '—' ?></td>
                             <td class="text-right">
                                 <a class="btn btn-sm" href="<?= url('/' . ($isAdmin ? 'admin' : 'receptionist') . '/patients/' . (int) $p['id'] . '/profile') ?>">Profile</a>
                                 <?php if (!$isAdmin): ?>

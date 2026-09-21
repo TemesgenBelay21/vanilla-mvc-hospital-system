@@ -1,48 +1,43 @@
 <?php
 
 /**
- * Patient model — medical profile records tied to patient users.
+ * Patient model — staff-managed patient records.
+ *
+ * Patients are purely data: they never log in and have no account. Contact
+ * details (name/email/phone) live on the record itself.
  */
 
 declare(strict_types=1);
 
 class Patient
 {
-    public static function findByUserId(int $userId)
-    {
-        $stmt = db()->prepare(
-            'SELECT p.*, u.name, u.email, u.phone, u.status, u.created_at AS account_created_at
-             FROM patients p
-             JOIN users u ON u.id = p.user_id
-             WHERE p.user_id = ?'
-        );
-        $stmt->execute([$userId]);
-        return $stmt->fetch() ?: false;
-    }
-
     public static function findById(int $id)
     {
-        $stmt = db()->prepare(
-            'SELECT p.*, u.name, u.email, u.phone, u.status, u.created_at AS account_created_at
-             FROM patients p
-             JOIN users u ON u.id = p.user_id
-             WHERE p.id = ?'
-        );
+        $stmt = db()->prepare('SELECT * FROM patients WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch() ?: false;
     }
 
-    public static function createFor(int $userId, array $d): int
+    public static function findByEmail(string $email)
+    {
+        $stmt = db()->prepare('SELECT id FROM patients WHERE email = ?');
+        $stmt->execute([$email]);
+        return $stmt->fetch() ?: false;
+    }
+
+    public static function create(array $d): int
     {
         $stmt = db()->prepare(
             'INSERT INTO patients
-                (user_id, date_of_birth, gender, address, emergency_contact_name,
+                (name, email, phone, date_of_birth, gender, address, emergency_contact_name,
                  emergency_contact_phone, blood_type, allergies)
              VALUES
-                (:user_id, :dob, :gender, :address, :ec_name, :ec_phone, :blood, :allergies)'
+                (:name, :email, :phone, :dob, :gender, :address, :ec_name, :ec_phone, :blood, :allergies)'
         );
         $stmt->execute([
-            ':user_id'   => $userId,
+            ':name'      => trim($d['name']),
+            ':email'     => ($d['email'] ?? '') !== '' ? strtolower(trim($d['email'])) : null,
+            ':phone'     => ($d['phone'] ?? '') !== '' ? $d['phone'] : null,
             ':dob'       => $d['date_of_birth'] ?? null,
             ':gender'    => $d['gender'] ?? null,
             ':address'   => $d['address'] ?? null,
@@ -54,17 +49,20 @@ class Patient
         return (int) db()->lastInsertId();
     }
 
-    public static function updateByUserId(int $userId, array $d): void
+    public static function update(int $id, array $d): void
     {
         $stmt = db()->prepare(
             'UPDATE patients SET
+                name = :name, email = :email, phone = :phone,
                 date_of_birth = :dob, gender = :gender, address = :address,
                 emergency_contact_name = :ec_name, emergency_contact_phone = :ec_phone,
                 blood_type = :blood, allergies = :allergies
-             WHERE user_id = :user_id'
+             WHERE id = :id'
         );
         $stmt->execute([
-            ':user_id'   => $userId,
+            ':name'      => trim($d['name']),
+            ':email'     => ($d['email'] ?? '') !== '' ? strtolower(trim($d['email'])) : null,
+            ':phone'     => ($d['phone'] ?? '') !== '' ? $d['phone'] : null,
             ':dob'       => $d['date_of_birth'] ?? null,
             ':gender'    => $d['gender'] ?? null,
             ':address'   => $d['address'] ?? null,
@@ -72,24 +70,18 @@ class Patient
             ':ec_phone'  => $d['emergency_contact_phone'] ?? null,
             ':blood'     => $d['blood_type'] ?? null,
             ':allergies' => $d['allergies'] ?? null,
+            ':id'        => $id,
         ]);
-    }
-
-    public static function updateUserFields(int $userId, array $d): void
-    {
-        User::update($userId, $d);
     }
 
     public static function search(string $term = ''): array
     {
         $term = trim($term);
         $stmt = db()->prepare(
-            'SELECT p.id, p.gender, p.blood_type, p.created_at AS profile_created_at,
-                    u.name, u.email, u.phone, u.status, u.created_at AS account_created_at
+            'SELECT p.id, p.name, p.email, p.phone, p.gender, p.blood_type, p.created_at
              FROM patients p
-             JOIN users u ON u.id = p.user_id
-             WHERE (:term = "") OR p.id = :num OR u.name LIKE :like OR u.phone LIKE :like2
-             ORDER BY u.name'
+             WHERE (:term = "") OR p.id = :num OR p.name LIKE :like OR p.phone LIKE :like2
+             ORDER BY p.name'
         );
         $stmt->execute([
             ':term'  => $term,
@@ -106,20 +98,18 @@ class Patient
     {
         $term = trim($term);
         $stmt = db()->prepare(
-            'SELECT p.id, p.gender, p.blood_type, p.created_at AS profile_created_at,
-                    u.name, u.email, u.phone, u.status, u.created_at AS account_created_at,
+            'SELECT p.id, p.name, p.email, p.phone, p.gender, p.blood_type, p.created_at,
                     (SELECT MAX(ap.appointment_date)
                        FROM appointments ap WHERE ap.doctor_id = :did AND ap.patient_id = p.id) AS last_visit
              FROM patients p
-             JOIN users u ON u.id = p.user_id
              WHERE (
                     p.id IN (SELECT ap.patient_id FROM appointments ap WHERE ap.doctor_id = :did1)
                  OR p.id IN (SELECT ad.patient_id FROM admissions ad WHERE ad.admitting_doctor_id = :did2)
                  OR p.id IN (SELECT pr.patient_id FROM prescriptions pr WHERE pr.doctor_id = :did3)
                  OR p.id IN (SELECT lr.patient_id FROM lab_requests lr WHERE lr.doctor_id = :did4)
              )
-             AND (:term = "" OR p.id = :num OR u.name LIKE :like OR u.phone LIKE :like2)
-             ORDER BY u.name'
+             AND (:term = "" OR p.id = :num OR p.name LIKE :like OR p.phone LIKE :like2)
+             ORDER BY p.name'
         );
         $stmt->execute([
             ':did'   => $doctorId, ':did1' => $doctorId, ':did2' => $doctorId,

@@ -12,8 +12,7 @@
 
 <div class="stat-grid mt">
     <?= render_partial('partials/stat-card', ['label' => 'Patient ID', 'value' => '#' . (int) $patient['id'], 'tone' => 'primary']) ?>
-    <?= render_partial('partials/stat-card', ['label' => 'Account status', 'value' => $patient['status'], 'tone' => $patient['status'] === 'active' ? 'ok' : 'warn']) ?>
-    <?= render_partial('partials/stat-card', ['label' => 'Registered', 'value' => format_date($patient['account_created_at']), 'tone' => 'teal']) ?>
+    <?= render_partial('partials/stat-card', ['label' => 'Registered', 'value' => format_date($patient['created_at']), 'tone' => 'teal']) ?>
 </div>
 
 <div class="card mt">

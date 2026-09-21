@@ -9,17 +9,20 @@ declare(strict_types=1);
 
 class PatientController
 {
-    /** Full registration form — receptionist only. */
+    /** Full registration form — admin and receptionist. */
     public function create(): void
     {
-        require_role('receptionist');
-        view('patients/create');
+        $user = require_role('admin', 'receptionist');
+        view('patients/create', [
+            'isAdmin'  => $user['role'] === 'admin',
+            'roleHome' => $user['role'] === 'receptionist' ? '/receptionist' : '/admin',
+        ]);
     }
 
-    /** Store a newly registered patient (receptionist only). */
+    /** Store a newly registered patient record — admin and receptionist. */
     public function store(): void
     {
-        require_role('receptionist');
+        $user = require_role('admin', 'receptionist');
         csrf_check();
 
         $input = [
@@ -41,18 +44,13 @@ class PatientController
                 flash('error', $error);
             }
             keep_old($input);
-            redirect('/receptionist/patients/create');
+            redirect('/' . $user['role'] . '/patients/create');
         }
 
-        $password = 'Patient@123';
-        $userId = User::create([
-            'role'     => 'patient',
-            'name'     => $input['name'],
-            'email'    => $input['email'],
-            'password' => $password,
-            'phone'    => $input['phone'] ?: null,
-        ]);
-        Patient::createFor($userId, [
+        $id = Patient::create([
+            'name'                   => $input['name'],
+            'email'                  => $input['email'] ?: null,
+            'phone'                  => $input['phone'] ?: null,
             'date_of_birth'          => $input['dob'] ?: null,
             'gender'                 => $input['gender'] ?: null,
             'address'                => $input['address'] ?: null,
@@ -62,8 +60,8 @@ class PatientController
             'allergies'              => $input['allergies'] ?: null,
         ]);
 
-        flash('success', 'Patient "' . $input['name'] . '" registered. Temporary password is ' . $password . '. Credentials can be handed to the patient at the front desk.');
-        redirect('/receptionist/patients');
+        flash('success', 'Patient "' . $input['name'] . '" registered (ID #' . $id . ').');
+        redirect('/' . $user['role'] . '/patients');
     }
 
     /** Searchable list — admin and receptionist (guards redirect others). */
@@ -114,7 +112,7 @@ class PatientController
         }
 
         $showClinical = $user['role'] !== 'receptionist';
-        $patientUserId = (int) $patient['user_id'];
+        $patientId = (int) $patient['id'];
 
         view('patients/profile', [
             'patient'       => $patient,
@@ -122,32 +120,10 @@ class PatientController
             'isDoctor'      => $isDoctor,
             'canPrescribe'  => $isDoctor,
             'showClinical'  => $showClinical,
-            'admissions'    => Admission::forPatient($patientUserId),
-            'prescriptions' => $showClinical ? Prescription::forPatient($patientUserId) : [],
-            'labs'          => $showClinical ? LabRequest::forPatient($patientUserId) : [],
+            'admissions'    => Admission::forPatient($patientId),
+            'prescriptions' => $showClinical ? Prescription::forPatient($patientId) : [],
+            'labs'          => $showClinical ? LabRequest::forPatient($patientId) : [],
             'roleHome'      => $isDoctor ? '/doctor' : ($user['role'] === 'receptionist' ? '/receptionist' : '/admin'),
-        ]);
-    }
-
-    /** Patient's own medical record — admissions, vitals, prescriptions, labs. */
-    public function medical(): void
-    {
-        $user    = require_role('patient');
-        $patient = Patient::findByUserId((int) $user['id']);
-
-        if ($patient === false) {
-            flash('error', 'Your patient profile was not found. Contact the front desk.');
-            redirect('/patient');
-        }
-
-        $admissions = Admission::forPatient((int) $user['id']);
-
-        view('patient/medical', [
-            'patient'      => $patient,
-            'admissions'   => $admissions,
-            'vitals'       => Vitals::latestForAdmissions(array_map('intval', array_column($admissions, 'id'))),
-            'prescriptions'=> Prescription::forPatient((int) $user['id']),
-            'labs'         => LabRequest::forPatient((int) $user['id']),
         ]);
     }
 
@@ -159,10 +135,10 @@ class PatientController
         if (mb_strlen($in['name'] ?? '') < 3) {
             $errors[] = 'Full name must be at least 3 characters.';
         }
-        if (!filter_var($in['email'] ?? '', FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'A valid email address is required.';
-        } elseif (User::findByEmail($in['email']) !== false) {
-            $errors[] = 'That email address is already in use.';
+        if (($in['email'] ?? '') !== '' && !filter_var($in['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Please enter a valid email address (optional).';
+        } elseif (($in['email'] ?? '') !== '' && Patient::findByEmail($in['email']) !== false) {
+            $errors[] = 'A patient with that email address already exists.';
         }
         if (!empty($in['dob']) && (!strtotime($in['dob']) || strtotime($in['dob']) > strtotime('today'))) {
             $errors[] = 'Date of birth is invalid (cannot be in the future).';

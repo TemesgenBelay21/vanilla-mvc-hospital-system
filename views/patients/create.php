@@ -1,10 +1,10 @@
 <div class="row">
     <h1 class="page-title grow">Register patient</h1>
-    <a class="btn" href="<?= url('/receptionist/patients') ?>">&larr; Back to patients</a>
+    <a class="btn" href="<?= url($roleHome . '/patients') ?>">&larr; Back to patients</a>
 </div>
 
 <div class="card mt">
-    <form method="post" action="<?= url('/receptionist/patients/store') ?>" autocomplete="off">
+    <form method="post" action="<?= url($roleHome . '/patients/store') ?>" autocomplete="off">
         <?= csrf_field() ?>
 
         <div class="form-grid">
@@ -13,8 +13,8 @@
                 <input type="text" id="name" name="name" value="<?= old('name') ?>" required>
             </div>
             <div class="form-group">
-                <label for="email">Email address <span class="optional">(required)</span></label>
-                <input type="email" id="email" name="email" value="<?= old('email') ?>" required>
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email" value="<?= old('email') ?>">
             </div>
             <div class="form-group">
                 <label for="phone">Phone number</label>
@@ -61,13 +61,13 @@
         </div>
 
         <p class="text-muted">
-            The patient gets a portal account with the temporary password
-            <code>Patient@123</code> (credentials can also be emailed once SMS/mail is configured by the system admin).
+            Patients are internal records only — they do not log into the system.
+            Contact details are used for appointment and billing emails.
         </p>
 
         <div class="row">
             <button class="btn btn-primary" type="submit">Register patient</button>
-            <a class="btn" href="<?= url('/receptionist/patients') ?>">Cancel</a>
+            <a class="btn" href="<?= url($roleHome . '/patients') ?>">Cancel</a>
         </div>
     </form>
 </div>
