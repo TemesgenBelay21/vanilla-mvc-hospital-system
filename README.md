@@ -21,7 +21,9 @@ A dependency-free MVC hospital management system (PHP 7.4 + MySQL/MariaDB + vani
 **Phase 3 — billing, payments & communications**
 - Accountant role: invoice generation, invoice ledger, cash payment, payment history
 - Invoicing engine that bills outstanding services (consultations, lab tests, ward days) once admission is discharged
-- Patient online payment via **Telebirr** (sandbox simulation for local development + live signing when configured)
+- Staff-mediated billing: accountant records cash payments; accountant _or_ receptionist opens the
+  Telebirr sandbox gateway on the patient's behalf (no patient-facing billing portal)
+- Signed webhook callback that credits invoices idempotently and notifies the patient + accountant
 - Signed webhook callback that credits invoices idempotently and notifies patient + accountant
 - Email notifications via [PHPMailer](https://github.com/PHPMailer/PHPMailer) (account activation, appointment
   approvals/reschedules, admission/discharge, lab results, dispensings, payment confirmations)
@@ -92,9 +94,11 @@ Both integrations are **optional in sandbox/local mode** — the app works out o
 - Pharmacist: `/pharmacist/dispense`, `/pharmacist/medicines`
 - Lab technician: `/lab/requests`
 - Accountant: `/accountant` dashboard, `/accountant/invoices`, `/accountant/invoices/generate`,
-  `/accountant/payments`
+  `/accountant/invoices/{id}`, `/accountant/payments`
+- Receptionist: `/receptionist/invoices`, `/receptionist/invoices/{id}` (view + collect Telebirr)
 - Admin: `/admin` dashboard, `/admin/reports`
-- Patient billing: `/patient/invoices` (view + pay outstanding invoices)
+- Billing is staff-mediated: the accountant records cash and any accountant/receptionist opens the
+  Telebirr sandbox gateway on the patient's behalf — there is no patient-facing billing portal.
 - Notifications: `/notifications` (JSON feed), `/notifications/mark-all-read`
 
 State-changing POST routes require a session CSRF token (rendered automatically by `csrf_field()`).
