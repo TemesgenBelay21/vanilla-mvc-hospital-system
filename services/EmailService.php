@@ -22,17 +22,29 @@ class EmailService
     }
 
     /**
-     * Send a branded email to a user by id.
+     * Send a branded email to a user by id (staff).
      * @return array{ok:bool,message:string}
      */
     public static function send(int $userId, string $subject, string $template, array $data = []): array
     {
+        $user = User::findById($userId);
+        if ($user === false) {
+            return ['ok' => false, 'message' => 'Recipient user not found.'];
+        }
+        return self::sendTo((string) $user['email'], (string) $user['name'], $subject, $template, $data);
+    }
+
+    /**
+     * Send a branded email to an arbitrary recipient (used for patients, who
+     * have no account — the recipient is a patients row, not a users row).
+     * @return array{ok:bool,message:string}
+     */
+    public static function sendTo(string $email, string $name, string $subject, string $template, array $data = []): array
+    {
         if (!self::configured()) {
             return ['ok' => false, 'message' => 'SMTP mail is not configured (set MAIL_* environment variables).'];
         }
-
-        $user = User::findById($userId);
-        if ($user === false || empty($user['email'])) {
+        if ($email === '') {
             return ['ok' => false, 'message' => 'Recipient has no email address.'];
         }
 
@@ -53,14 +65,14 @@ class EmailService
             $mail->CharSet    = 'UTF-8';
 
             $mail->setFrom(MAIL_FROM, MAIL_FROM_NAME);
-            $mail->addAddress($user['email'], $user['name']);
+            $mail->addAddress($email, $name);
 
             $mail->isHTML(true);
             $mail->Subject = $subject;
 
             $context = array_merge($data, [
                 'app_name' => APP_NAME,
-                'user'     => $user,
+                'user'     => ['name' => $name, 'email' => $email],
                 'subject'  => $subject,
             ]);
 

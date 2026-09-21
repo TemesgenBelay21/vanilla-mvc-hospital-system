@@ -1,28 +1,26 @@
 <div class="row">
     <h1 class="page-title grow">Book an appointment</h1>
-    <a class="btn" href="<?= url($role === 'patient' ? '/patient' : '/receptionist/appointments') ?>">&larr; Back</a>
+    <a class="btn" href="<?= url('/receptionist/appointments') ?>">&larr; Back</a>
 </div>
 
 <div class="card mt">
-    <form method="post" action="<?= url($role === 'patient' ? '/patient/book' : '/receptionist/appointments/book') ?>" id="bookingForm">
+    <form method="post" action="<?= url('/receptionist/appointments/book') ?>" id="bookingForm">
         <?= csrf_field() ?>
 
-        <?php if ($role === 'receptionist'): ?>
-            <?php if (empty($patients)): ?>
-                <p class="alert alert-warning">No patients registered yet. <a href="<?= url('/receptionist/patients/create') ?>">Register a patient</a> first.</p>
-            <?php else: ?>
-                <div class="form-group">
-                    <label for="patient_id">Patient</label>
-                    <select id="patient_id" name="patient_id" required>
-                        <option value="">— Select patient —</option>
-                        <?php foreach ($patients as $p): ?>
-                            <option value="<?= (int) $p['id'] ?>" <?= (int) $selected === (int) $p['id'] ? 'selected' : '' ?>>
-                                #<?= (int) $p['id'] ?> — <?= e($p['name']) ?> (<?= e($p['phone'] ?: 'no phone') ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            <?php endif; ?>
+        <?php if (empty($patients)): ?>
+            <p class="alert alert-warning">No patients registered yet. <a href="<?= url('/receptionist/patients/create') ?>">Register a patient</a> first.</p>
+        <?php else: ?>
+            <div class="form-group">
+                <label for="patient_id">Patient</label>
+                <select id="patient_id" name="patient_id" required>
+                    <option value="">— Select patient —</option>
+                    <?php foreach ($patients as $p): ?>
+                        <option value="<?= (int) $p['id'] ?>" <?= (int) $selected === (int) $p['id'] ? 'selected' : '' ?>>
+                            #<?= (int) $p['id'] ?> — <?= e($p['name']) ?> (<?= e($p['phone'] ?: 'no phone') ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
         <?php endif; ?>
 
         <div class="form-grid">

@@ -15,4 +15,4 @@
     <tr><td style="padding:3px 0;color:#475569;">Time</td><td style="padding:3px 0;text-align:right;color:#0f172a;font-weight:600;"><?= e(date('g:i A', strtotime($time))) ?></td></tr>
     <tr><td style="padding:3px 0;color:#475569;">Doctor</td><td style="padding:3px 0;text-align:right;color:#0f172a;font-weight:600;">Dr. <?= e($doctor_name) ?></td></tr>
 </table>
-<p>Please arrive a few minutes early and bring your appointment reference. If you need to reschedule, visit your patient portal.</p>
+<p>Please arrive a few minutes early and bring your appointment reference. If you need to change it, please contact the reception desk or your doctor.</p>

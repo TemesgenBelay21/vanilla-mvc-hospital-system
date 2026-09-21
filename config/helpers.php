@@ -325,3 +325,13 @@ function notify_and_mail(int $userId, string $title, string $message, ?string $l
     notify_user($userId, $title, $message, $link);
     EmailService::send($userId, $title, $template, $data);
 }
+
+/** Branded email to a patient record (patients have no account/portal — email only). */
+function mail_patient(int $patientId, string $subject, string $message, string $template, array $data = []): void
+{
+    $patient = Patient::findById($patientId);
+    if ($patient === false || (string) ($patient['email'] ?? '') === '') {
+        return;
+    }
+    EmailService::sendTo((string) $patient['email'], (string) $patient['name'], $subject, $template, $data);
+}

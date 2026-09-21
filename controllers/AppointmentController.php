@@ -1,7 +1,7 @@
 <?php
 
 /**
- * AppointmentController — booking flow (patient + receptionist) and the
+ * AppointmentController — receptionist-booked appointments and the
  * slot/doctor JSON lookups that drive the booking form.
  */
 
@@ -9,54 +9,33 @@ declare(strict_types=1);
 
 class AppointmentController
 {
-    /** Shared booking form. Patient books for themselves, receptionist on behalf of a patient. */
+    /** Booking form — a receptionist books on behalf of a patient. */
     public function create(): void
     {
-        $user     = require_role('patient', 'receptionist');
-        $selected = 0;
-
-        if ($user['role'] === 'patient') {
-            $patient = Patient::findByUserId((int) $user['id']);
-            if ($patient === false) {
-                flash('error', 'Your patient profile was not found. Contact the front desk.');
-                redirect('/patient');
-            }
-            $selected = (int) $patient['id'];
-        } else {
-            $selected = (int) ($_GET['patient'] ?? 0);
-            if ($selected > 0 && Patient::findById($selected) === false) {
-                flash('error', 'That patient does not exist.');
-                redirect('/receptionist/appointments/book');
-            }
+        require_role('receptionist');
+        $selected = (int) ($_GET['patient'] ?? 0);
+        if ($selected > 0 && Patient::findById($selected) === false) {
+            flash('error', 'That patient does not exist.');
+            redirect('/receptionist/appointments/book');
         }
 
         view('appointments/book', [
             'departments' => Department::all(),
-            'patients'    => $user['role'] === 'receptionist' ? Patient::search('') : [],
+            'patients'    => Patient::search(''),
             'selected'    => $selected,
-            'role'        => $user['role'],
         ]);
     }
 
-    /** Create the appointment. */
+    /** Create the appointment (receptionist only). */
     public function store(): void
     {
-        $user = require_role('patient', 'receptionist');
+        require_role('receptionist');
         csrf_check();
 
-        if ($user['role'] === 'patient') {
-            $patient = Patient::findByUserId((int) $user['id']);
-            if ($patient === false) {
-                flash('error', 'Your patient profile was not found.');
-                redirect('/patient');
-            }
-            $patientId = (int) $patient['id'];
-        } else {
-            $patientId = (int) ($_POST['patient_id'] ?? 0);
-            if (Patient::findById($patientId) === false) {
-                flash('error', 'Please select the patient this appointment is for.');
-                redirect('/receptionist/appointments/book');
-            }
+        $patientId = (int) ($_POST['patient_id'] ?? 0);
+        if (Patient::findById($patientId) === false) {
+            flash('error', 'Please select the patient this appointment is for.');
+            redirect('/receptionist/appointments/book');
         }
 
         $input = [
@@ -70,12 +49,12 @@ class AppointmentController
         $error = $this->validateBooking($input, $patientId);
         if ($error !== null) {
             flash('error', $error);
-            $this->backToBooking($user['role'], $patientId);
+            $this->backToBooking($patientId);
         }
 
         if (Appointment::isSlotTaken($input['doctor_id'], $input['date'], $input['start_time'])) {
             flash('error', 'That time slot has just been taken. Please choose another.');
-            $this->backToBooking($user['role'], $patientId);
+            $this->backToBooking($patientId);
         }
 
         $id = Appointment::createAppointment([
@@ -89,11 +68,11 @@ class AppointmentController
 
         if ($id === false) {
             flash('error', 'That time slot has just been taken. Please choose another.');
-            $this->backToBooking($user['role'], $patientId);
+            $this->backToBooking($patientId);
         }
 
-        flash('success', 'Appointment requested. It will appear once approved by the doctor.');
-        redirect($user['role'] === 'patient' ? '/patient/appointments' : '/receptionist/appointments');
+        flash('success', 'Appointment booked. It will appear once approved by the doctor.');
+        redirect('/receptionist/appointments');
     }
 
     /** JSON: active doctors in a department (drives the booking form). */
@@ -161,7 +140,7 @@ class AppointmentController
 
     /**
      * Load the appointment the current user is allowed to act on.
-     * Doctors can only act on their own appointments; patients on their own.
+     * Doctors can only act on their own appointments; receptionists on all.
      */
     private function loadOwnedAppointment(int $id, array $roles)
     {
@@ -179,17 +158,10 @@ class AppointmentController
                 redirect($this->backPath('doctor'));
             }
         }
-        if ($user['role'] === 'patient') {
-            $patient = Patient::findByUserId((int) $user['id']);
-            if ((int) $app['patient_id'] !== (int) $patient['id']) {
-                flash('error', 'You cannot manage another patient\'s appointment.');
-                redirect($this->backPath('patient'));
-            }
-        }
         return [$user, $app];
     }
 
-    /** Role-specific appointment lists. */
+    /** Role-specific appointment lists (doctor / receptionist). */
     public function index(): void
     {
         $user = require_login();
@@ -220,36 +192,13 @@ class AppointmentController
             return;
         }
 
-        if ($user['role'] === 'patient') {
-            $patient = Patient::findByUserId((int) $user['id']);
-            $rows    = Appointment::forPatient((int) $patient['id']);
-
-            $upcoming = array_filter($rows, static function ($r) {
-                return ($r['appointment_date'] . ' ' . $r['start_time']) >= date('Y-m-d H:i:s')
-                    && in_array($r['status'], ['pending', 'approved', 'rescheduled'], true);
-            });
-            $upcomingIds = array_column($upcoming, 'id');
-            $history = array_filter($rows, static function ($r) use ($upcomingIds) {
-                return !in_array((int) $r['id'], $upcomingIds, true);
-            });
-
-            view('appointments/patient-index', [
-                'upcoming' => $upcoming,
-                'history'  => $history,
-            ]);
-            return;
-        }
-
         redirect('/login');
     }
 
-    /** Redirect back to the correct booking form. */
-    private function backToBooking(string $role, int $patientId): void
+    /** Redirect back to the booking form. */
+    private function backToBooking(int $patientId): void
     {
-        if ($role === 'receptionist') {
-            redirect('/receptionist/appointments/book?patient=' . $patientId);
-        }
-        redirect('/patient/book');
+        redirect('/receptionist/appointments/book?patient=' . $patientId);
     }
 
     // ---------------------------------------------------------------
@@ -270,9 +219,9 @@ class AppointmentController
 
         $patient = Patient::findById((int) $app['patient_id']);
         if ($patient !== false) {
-            notify_and_mail((int) $patient['user_id'], 'Appointment approved',
+            mail_patient((int) $patient['id'], 'Appointment approved',
                 'Your appointment with Dr. ' . $app['doctor_name'] . ' on ' . format_date($app['appointment_date']) . ' at ' . format_time($app['start_time']) . ' has been approved.',
-                '/patient/appointments', 'appointment-approved', [
+                'appointment-approved', [
                     'doctor_name'  => $app['doctor_name'],
                     'patient_name' => $app['patient_name'],
                     'date'         => $app['appointment_date'],
@@ -317,14 +266,14 @@ class AppointmentController
     public function cancel(array $params): void
     {
         csrf_check();
-        [$user, $app] = $this->loadOwnedAppointment((int) $params['id'], ['patient', 'receptionist']);
+        [$user, $app] = $this->loadOwnedAppointment((int) $params['id'], ['receptionist']);
 
         if (!in_array($app['status'], ['pending', 'approved', 'rescheduled'], true)) {
             flash('error', 'This appointment can no longer be cancelled.');
             redirect($this->backPath($user['role']));
         }
 
-        Appointment::updateStatus((int) $app['id'], 'rejected', 'Cancelled by ' . ($user['role'] === 'patient' ? 'patient' : 'receptionist') . '.');
+        Appointment::updateStatus((int) $app['id'], 'rejected', 'Cancelled by receptionist.');
         flash('success', 'Appointment cancelled.');
         redirect($this->backPath($user['role']));
     }
@@ -377,9 +326,9 @@ class AppointmentController
 
         $patient = Patient::findById((int) $app['patient_id']);
         if ($patient !== false) {
-            notify_and_mail((int) $patient['user_id'], 'Appointment rescheduled',
+            mail_patient((int) $patient['id'], 'Appointment rescheduled',
                 'Your appointment with Dr. ' . $app['doctor_name'] . ' was moved to ' . format_date($input['date']) . ' at ' . format_time($input['start_time']) . '.',
-                '/patient/appointments', 'appointment-rescheduled', [
+                'appointment-rescheduled', [
                     'doctor_name'  => $app['doctor_name'],
                     'patient_name' => $app['patient_name'],
                     'old_date'     => $app['appointment_date'] . ' ' . $app['start_time'],
@@ -396,9 +345,6 @@ class AppointmentController
     {
         if ($role === 'doctor') {
             return '/doctor/appointments';
-        }
-        if ($role === 'patient') {
-            return '/patient/appointments';
         }
         return '/receptionist/appointments';
     }
