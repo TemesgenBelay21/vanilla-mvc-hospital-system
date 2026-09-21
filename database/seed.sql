@@ -1,10 +1,10 @@
 -- ==============================================================
 -- Hospital Management System — Phase 1 seed data
--- Demo logins (all passwords are the plain "…123" strings):
+-- Staff demo logins (all passwords are the plain "…123" strings):
 --   Admin        admin@hospital.com      / admin123
 --   Doctor       doctor@hospital.com     / doctor123
 --   Receptionist receptionist@hospital.com / reception123
---   Patient      patient@hospital.com    / patient123
+-- Patients are records only (no login) — see the patients insert below.
 -- ==============================================================
 
 -- -----------------------------------------------------------------
@@ -26,8 +26,7 @@ INSERT INTO users (role, name, email, password, phone) VALUES
 ('admin',        'System Administrator', 'admin@hospital.com',         '$2y$10$kC9qVXQrgP.cyks6t8yMTO7Cl5YQ3Ul.1FgMu3tBZLhu1zie5KpG6', '+251 911 000 111'),
 ('doctor',       'Dr. Abebe Kebede',     'doctor@hospital.com',        '$2y$10$Wd1VoH1O9yt8qITSu564ceU28pDaaneDbz47hd10H4LRILErt6lMW', '+251 911 000 222'),
 ('doctor',       'Dr. Sara Alemu',       'sara@hospital.com',          '$2y$10$Wd1VoH1O9yt8qITSu564ceU28pDaaneDbz47hd10H4LRILErt6lMW', '+251 911 000 223'),
-('receptionist', 'Hanna Tesfaye',        'receptionist@hospital.com',  '$2y$10$bstZXMGGhnYXP8v4CKqfOO9CWppGijUs5f5q4j1PG.qabmRmQqS0G', '+251 911 000 333'),
-('patient',      'Dawit Getachew',       'patient@hospital.com',       '$2y$10$xRPyjMc/eThzrWPXqCN0meQI2BLEl7X6uzFWMkNY0S/IaiO/Qocwa', '+251 911 000 444');
+('receptionist', 'Hanna Tesfaye',        'receptionist@hospital.com',  '$2y$10$bstZXMGGhnYXP8v4CKqfOO9CWppGijUs5f5q4j1PG.qabmRmQqS0G', '+251 911 000 333');
 
 -- -----------------------------------------------------------------
 -- Doctors: Dr. Abebe (Cardiology), Dr. Sara (Pediatrics)
@@ -39,11 +38,11 @@ INSERT INTO doctors (user_id, department_id, specialization, qualification) VALU
  'General Pediatrician',        'MD — Gondar University');
 
 -- -----------------------------------------------------------------
--- Patient medical profile
+-- Patient record (records only — patients have no login/account)
 -- -----------------------------------------------------------------
-INSERT INTO patients (user_id, date_of_birth, gender, address, emergency_contact_name, emergency_contact_phone, blood_type, allergies)
+INSERT INTO patients (name, email, phone, date_of_birth, gender, address, emergency_contact_name, emergency_contact_phone, blood_type, allergies)
 VALUES (
-    (SELECT id FROM users WHERE email = 'patient@hospital.com'),
+    'Dawit Getachew', 'patient@hospital.com', '+251 911 000 444',
     '1992-04-15', 'male', 'Bole, Addis Ababa',
     'Marta Getachew', '+251 911 555 444', 'O+',
     'Penicillin, peanuts'

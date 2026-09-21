@@ -8,12 +8,12 @@ CREATE DATABASE IF NOT EXISTS `hospital_management_db`
     COLLATE utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------
--- Users (roles: admin, doctor, receptionist, patient, nurse,
---            pharmacist, lab_technician)
+-- Users (staff-only roles: admin, doctor, receptionist, nurse,
+--            pharmacist, lab_technician, accountant)
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    role           ENUM('admin','doctor','receptionist','patient','nurse','pharmacist','lab_technician','accountant') NOT NULL,
+    role           ENUM('admin','doctor','receptionist','nurse','pharmacist','lab_technician','accountant') NOT NULL,
     name           VARCHAR(100) NOT NULL,
     email          VARCHAR(150) NOT NULL,
     password       VARCHAR(255) NOT NULL,
@@ -53,11 +53,14 @@ CREATE TABLE IF NOT EXISTS doctors (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------
--- Patients (medical details tied to a users row with role 'patient')
+-- Patients (staff-managed records — patients never log in and have
+-- no account; contact details live on the record itself)
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS patients (
     id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id                 INT UNSIGNED NOT NULL,
+    name                    VARCHAR(100) NOT NULL,
+    email                   VARCHAR(150) DEFAULT NULL,
+    phone                   VARCHAR(30)  DEFAULT NULL,
     date_of_birth           DATE DEFAULT NULL,
     gender                  ENUM('male','female','other') DEFAULT NULL,
     address                 VARCHAR(255) DEFAULT NULL,
@@ -66,8 +69,8 @@ CREATE TABLE IF NOT EXISTS patients (
     blood_type              ENUM('A+','A-','B+','B-','AB+','AB-','O+','O-') DEFAULT NULL,
     allergies               TEXT DEFAULT NULL,
     created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_patients_user (user_id),
-    CONSTRAINT fk_patients_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    KEY idx_patients_name (name),
+    KEY idx_patients_phone (phone)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------
