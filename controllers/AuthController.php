@@ -1,7 +1,10 @@
 <?php
 
 /**
- * AuthController — login, logout and patient self-registration.
+ * AuthController — staff login and logout.
+ *
+ * This is an internal, staff-only system: patients never authenticate and
+ * therefore have no registration path here.
  */
 
 declare(strict_types=1);
@@ -62,64 +65,5 @@ class AuthController
         session_destroy();
         flash('info', 'You have been logged out.');
         redirect('/login');
-    }
-
-    public function registerForm(): void
-    {
-        if (is_logged_in()) {
-            redirect(role_home($_SESSION['role']));
-        }
-        view('auth/register', [], 'guest');
-    }
-
-    public function register(): void
-    {
-        csrf_check();
-
-        $name     = trim($_POST['name'] ?? '');
-        $email    = strtolower(trim($_POST['email'] ?? ''));
-        $phone    = trim($_POST['phone'] ?? '');
-        $password = (string) ($_POST['password'] ?? '');
-        $confirm  = (string) ($_POST['password_confirmation'] ?? '');
-
-        $errors = [];
-
-        if (mb_strlen($name) < 3) {
-            $errors[] = 'Full name must be at least 3 characters.';
-        }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'A valid email address is required.';
-        } elseif (User::findByEmail($email) !== false) {
-            $errors[] = 'That email address is already registered.';
-        }
-        if ($phone !== '' && mb_strlen($phone) < 7) {
-            $errors[] = 'Please enter a valid phone number.';
-        }
-        if (mb_strlen($password) < 8) {
-            $errors[] = 'Password must be at least 8 characters.';
-        } elseif ($password !== $confirm) {
-            $errors[] = 'Passwords do not match.';
-        }
-
-        if ($errors) {
-            foreach ($errors as $error) {
-                flash('error', $error);
-            }
-            keep_old(['name' => $name, 'email' => $email, 'phone' => $phone]);
-            redirect('/register');
-        }
-
-        $userId = User::create([
-            'role'     => 'patient',
-            'name'     => $name,
-            'email'    => $email,
-            'password' => $password,
-            'phone'    => $phone ?: null,
-        ]);
-        Patient::createFor($userId, []);
-
-        set_auth_session(User::findById($userId));
-        flash('success', 'Account created. Welcome to ' . APP_NAME . '!');
-        redirect('/patient');
     }
 }

@@ -19,7 +19,5 @@
         <button type="submit" class="btn btn-primary btn-block">Sign in</button>
     </form>
 
-    <p class="auth-links">
-        New patient? <a href="<?= url('/register') ?>">Create an account</a>
-    </p>
+    <p class="auth-links text-muted">Staff access only. Contact the administrator if you need an account.</p>
 </div>

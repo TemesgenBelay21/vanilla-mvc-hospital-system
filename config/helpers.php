@@ -172,7 +172,6 @@ function role_home(string $role): string
         case 'admin':          return '/admin';
         case 'doctor':         return '/doctor';
         case 'receptionist':   return '/receptionist';
-        case 'patient':        return '/patient';
         case 'nurse':          return '/nurse';
         case 'pharmacist':     return '/pharmacist';
         case 'lab_technician': return '/lab';
@@ -311,7 +310,6 @@ function role_badge(string $role): string
         'pharmacist'     => 'pending',
         'lab_technician' => 'completed',
         'accountant'     => 'warning',
-        'patient'        => 'info',
     ][$role] ?? 'info';
 }
 

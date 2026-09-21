@@ -20,7 +20,6 @@ $routes = [
         '/'                            => ['AuthController', 'redirectFromHome'],
         '/login'                       => ['AuthController', 'loginForm'],
         '/logout'                      => ['AuthController', 'logout'],
-        '/register'                    => ['AuthController', 'registerForm'],
 
         // Dashboards
         '/admin'                       => ['DashboardController', 'admin'],
@@ -126,7 +125,6 @@ $routes = [
     ],
     'POST' => [
         '/login'                       => ['AuthController', 'login'],
-        '/register'                    => ['AuthController', 'register'],
 
         // Patients
         '/receptionist/patients/store' => ['PatientController', 'store'],
