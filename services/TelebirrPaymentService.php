@@ -50,18 +50,16 @@ class TelebirrPaymentService
     // ------------------------------------------------------------------
 
     /**
-     * Kick off payment for a (patient-owned) invoice.
+     * Kick off payment for an invoice on behalf of a patient. Payment is
+     * staff-mediated: the initiating accountant/receptionist becomes
+     * payments.paid_by, never the patient (patients have no account).
      * @return array{ok:bool,redirect:string|null,out_trade_no:string|null,message:string}
      */
-    public static function initiate(int $invoiceId, int $patientUserId): array
+    public static function initiate(int $invoiceId, int $recordedByUserId, string $backPath): array
     {
         $invoice = Invoice::findById($invoiceId);
         if ($invoice === false) {
             return ['ok' => false, 'redirect' => null, 'out_trade_no' => null, 'message' => 'Invoice not found.'];
-        }
-        $patient = Patient::findByUserId($patientUserId);
-        if ($patient === false || (int) $patient['id'] !== (int) $invoice['patient_id']) {
-            return ['ok' => false, 'redirect' => null, 'out_trade_no' => null, 'message' => 'You can only pay your own invoices.'];
         }
         $due = (float) $invoice['due_amount'];
         if ($due <= 0) {
@@ -77,18 +75,18 @@ class TelebirrPaymentService
             'method'     => 'telebirr',
             'status'     => 'pending',
             'reference'  => $outTradeNo,
-            'paid_by'    => $patientUserId,
+            'paid_by'    => $recordedByUserId,
         ]);
 
         if (self::isSandbox()) {
             $token = hash_hmac('sha256', 'pay:' . $outTradeNo, self::secret());
-            $redirect = url('/patient/telebirr/pay?invoice=' . $invoiceId . '&o=' . urlencode($outTradeNo) . '&tok=' . $token);
+            $redirect = url('/telebirr/pay?invoice=' . $invoiceId . '&o=' . urlencode($outTradeNo) . '&tok=' . $token);
         } else {
-            $result = self::sendSendPayRequest($invoice, $outTradeNo);
+            $result = self::sendSendPayRequest($invoice, $outTradeNo, $backPath);
             if (!$result['ok']) {
                 Payment::create([
                     'invoice_id' => $invoiceId, 'amount' => $due, 'method' => 'telebirr',
-                    'status' => 'failed', 'reference' => $outTradeNo, 'paid_by' => $patientUserId,
+                    'status' => 'failed', 'reference' => $outTradeNo, 'paid_by' => $recordedByUserId,
                 ]);
                 return ['ok' => false, 'redirect' => null, 'out_trade_no' => $outTradeNo, 'message' => $result['message']];
             }
@@ -102,7 +100,7 @@ class TelebirrPaymentService
      * Live: build a signed sendPay request and POST it to Telebirr.
      * @return array{ok:bool,toPayUrl:string|null,message:string}
      */
-    private static function sendSendPayRequest(array $invoice, string $outTradeNo): array
+    private static function sendSendPayRequest(array $invoice, string $outTradeNo, string $backPath): array
     {
         if (TELEBIRR_APP_ID === '' || TELEBIRR_SHORT_CODE === '' || TELEBIRR_PRIVATE_KEY === '') {
             return ['ok' => false, 'toPayUrl' => null, 'message' => 'Telebirr live credentials (appId, shortCode, private key) are not configured.'];
@@ -128,7 +126,7 @@ class TelebirrPaymentService
             'outTradeNo'   => $outTradeNo,
             'totalAmount'  => $amount,
             'notifyUrl'    => url('/payment/telebirr/webhook'),
-            'returnUrl'    => url('/patient/invoices'),
+            'returnUrl'    => url($backPath),
             'signature'    => $signature,
         ], JSON_UNESCAPED_SLASHES);
 
@@ -209,19 +207,18 @@ class TelebirrPaymentService
             return ['ok' => false, 'code' => 409, 'message' => $result['message']];
         }
 
-        // Notify + email the patient about the confirmed payment.
+        // Notify the patient (email only — patients have no portal) and the accountant.
         $invoice = Invoice::findById((int) $payment['invoice_id']);
         if ($invoice !== false) {
             $patient = Patient::findById((int) $invoice['patient_id']);
             if ($patient !== false) {
-                notify_user((int) $patient['user_id'], 'Payment confirmed',
+                mail_patient((int) $patient['id'], 'Payment confirmed',
                     'Your payment of ' . number_format($amount, 2) . ' ETB for invoice ' . $invoice['invoice_number'] . ' was received.',
-                    '/patient/invoices');
-                EmailService::send((int) $patient['user_id'], 'Payment confirmed', 'payment-confirmed', [
-                    'invoice_number' => $invoice['invoice_number'],
-                    'amount'         => number_format($amount, 2),
-                    'reference'      => (string) ($payload['txnNo'] ?? $outTradeNo),
-                ]);
+                    'payment-confirmed', [
+                        'invoice_number' => $invoice['invoice_number'],
+                        'amount'         => number_format($amount, 2),
+                        'reference'      => (string) ($payload['txnNo'] ?? $outTradeNo),
+                    ]);
             }
             notify_user((int) $invoice['generated_by'], 'Payment received',
                 'Invoice ' . $invoice['invoice_number'] . ' received a Telebirr payment of ' . number_format($amount, 2) . ' ETB.',
@@ -322,6 +319,19 @@ class TelebirrPaymentService
 
         if ($paid) {
             BillingService::recordPayment((int) $invoiceId, (float) $pending['amount'], 'telebirr', (int) $pending['paid_by'], $pending['reference'], (string) ($data['transactionNo'] ?? ''), $response);
+            $patient = Patient::findById((int) $invoice['patient_id']);
+            if ($patient !== false) {
+                mail_patient((int) $patient['id'], 'Payment confirmed',
+                    'Your payment of ' . number_format((float) $pending['amount'], 2) . ' ETB for invoice ' . $invoice['invoice_number'] . ' was received.',
+                    'payment-confirmed', [
+                        'invoice_number' => $invoice['invoice_number'],
+                        'amount'         => number_format((float) $pending['amount'], 2),
+                        'reference'      => (string) ($data['transactionNo'] ?? $pending['reference']),
+                    ]);
+            }
+            notify_user((int) $invoice['generated_by'], 'Payment received',
+                'Invoice ' . $invoice['invoice_number'] . ' received a Telebirr payment of ' . number_format((float) $pending['amount'], 2) . ' ETB.',
+                '/accountant/invoices/' . (int) $invoice['id']);
         }
         return ['ok' => true, 'paid' => $paid, 'message' => $paid ? 'Payment confirmed.' : 'Payment not yet received.'];
     }

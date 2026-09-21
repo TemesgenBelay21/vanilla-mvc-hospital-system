@@ -1,60 +1,51 @@
 <?php
 
 /**
- * PaymentController — patient-side invoice payment via Telebirr,
+ * PaymentController — staff-mediated Telebirr payment for an invoice,
  * the sandbox gateway simulation page, the status-poll fallback and the
  * public signature-verified webhook.
+ *
+ * Patients never pay directly: an accountant or receptionist initiates the
+ * payment on the patient's behalf and is recorded as payments.paid_by.
  */
 
 declare(strict_types=1);
 
 class PaymentController
 {
-    public function patientInvoices(): void
-    {
-        $user    = require_role('patient');
-        $patient = Patient::findByUserId((int) $user['id']);
-
-        $invoices = $patient === false ? [] : Invoice::forPatient((int) $user['id']);
-
-        view('patient/invoices', [
-            'invoices' => $invoices,
-            'outstanding' => Invoice::outstandingFor((int) $user['id']),
-        ]);
-    }
-
-    /** POST: begin a Telebirr payment for one of the patient's invoices. */
+    /** POST: begin a Telebirr payment for an invoice (accountant or receptionist). */
     public function initiate(array $params): void
     {
-        $user = require_role('patient');
+        $user = require_role('accountant', 'receptionist');
         csrf_check();
 
+        $backPath = '/' . $user['role'] . '/invoices';
         $invoiceId = (int) $params['id'];
-        $result = TelebirrPaymentService::initiate($invoiceId, (int) $user['id']);
+        $result = TelebirrPaymentService::initiate($invoiceId, (int) $user['id'], $backPath);
 
         if (!$result['ok']) {
             flash('error', $result['message']);
-            redirect('/patient/invoices');
+            redirect($backPath);
         }
 
         if ($result['redirect'] !== null) {
             redirect($result['redirect']);
         }
         flash('info', 'Payment initialized.');
-        redirect('/patient/invoices');
+        redirect($backPath);
     }
 
     /**
      * GET: Telebirr redirect destination. In sandbox mode this is our local
      * "gateway" page that simulates the Telebirr payment app; in live mode
-     * the user is redirected straight to the real toPayUrl before reaching here.
+     * the customer is redirected straight to the real toPayUrl before reaching here.
      */
     public function gateway(array $params = []): void
     {
-        $user    = require_role('patient');
-        $patient = Patient::findByUserId((int) $user['id']);
+        $user     = require_role('accountant', 'receptionist');
+        $backPath = '/' . $user['role'] . '/invoices';
 
-        $invoiceId = (int) ($_GET['invoice'] ?? 0);
+        $invoiceId  = (int) ($_GET['invoice'] ?? 0);
         $outTradeNo = trim((string) ($_GET['o'] ?? ''));
         $token      = trim((string) ($_GET['tok'] ?? ''));
 
@@ -62,37 +53,37 @@ class PaymentController
         if (
             TelebirrPaymentService::isSandbox()
             && ($invoice === false
-                || $patient === false || (int) $invoice['patient_id'] !== (int) $patient['id']
                 || !TelebirrPaymentService::sandboxTokenValid($outTradeNo, $token))
         ) {
             flash('error', 'Invalid payment link.');
-            redirect('/patient/invoices');
+            redirect($backPath);
         }
 
-        view('patient/telebirr-pay', [
+        view('accountant/invoices/telebirr-gateway', [
             'invoice'   => $invoice,
             'isSandbox' => TelebirrPaymentService::isSandbox(),
             'sandbox'   => TelebirrPaymentService::isSandbox() ? $this->sandboxCallback($invoice, $outTradeNo) : null,
-            'verifyUrl' => '/patient/telebirr/verify?invoice=' . $invoiceId,
+            'verifyUrl' => '/telebirr/verify?invoice=' . $invoiceId,
+            'backPath'  => $backPath,
         ]);
     }
 
     /** GET: manual status-pull fallback when the webhook did not arrive. */
     public function verifyStatus(): void
     {
-        require_role('patient');
+        $user = require_role('accountant', 'receptionist');
+        $backPath = '/' . $user['role'] . '/invoices';
 
         $invoiceId = (int) ($_GET['invoice'] ?? 0);
         $invoice   = Invoice::findById($invoiceId);
-        $patient   = Patient::findByUserId((int) current_user()['id']);
-        if ($invoice === false || $patient === false || (int) $invoice['patient_id'] !== (int) $patient['id']) {
+        if ($invoice === false) {
             flash('error', 'Invoice not found.');
-            redirect('/patient/invoices');
+            redirect($backPath);
         }
 
         $result = TelebirrPaymentService::verifyStatus($invoiceId);
         flash($result['paid'] ? 'success' : 'info', $result['message']);
-        redirect('/patient/invoices');
+        redirect($backPath);
     }
 
     /**

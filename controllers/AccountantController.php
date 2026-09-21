@@ -11,7 +11,8 @@ class AccountantController
 {
     public function index(): void
     {
-        require_role('accountant');
+        $user = require_role('accountant', 'receptionist');
+        $isAccountant = $user['role'] === 'accountant';
 
         $status = trim($_GET['status'] ?? '');
         $q      = trim($_GET['q'] ?? '');
@@ -25,6 +26,8 @@ class AccountantController
             'q'          => $q,
             'from'       => $from,
             'to'         => $to,
+            'isAccountant' => $isAccountant,
+            'roleHome'     => $isAccountant ? '/accountant' : '/receptionist',
             'stats'      => [
                 'total'     => Invoice::countOf(),
                 'unpaid'    => Invoice::countByStatus('unpaid'),
@@ -37,18 +40,20 @@ class AccountantController
 
     public function show(array $params): void
     {
-        require_role('accountant');
+        $user = require_role('accountant', 'receptionist');
 
         $invoice = Invoice::findById((int) $params['id']);
         if ($invoice === false) {
             flash('error', 'Invoice not found.');
-            redirect('/accountant/invoices');
+            redirect('/' . $user['role'] . '/invoices');
         }
 
         view('accountant/invoices/show', [
-            'invoice'  => $invoice,
-            'items'    => Invoice::items((int) $invoice['id']),
-            'payments' => Invoice::payments((int) $invoice['id']),
+            'invoice'      => $invoice,
+            'items'        => Invoice::items((int) $invoice['id']),
+            'payments'     => Invoice::payments((int) $invoice['id']),
+            'isAccountant' => $user['role'] === 'accountant',
+            'roleHome'     => $user['role'] === 'accountant' ? '/accountant' : '/receptionist',
         ]);
     }
 
